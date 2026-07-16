@@ -2491,31 +2491,45 @@
         navigate('page-b2', 'bg-video-b');
     }
 
-    // B2 复制单张牌释义
-    function copySingleB2Meaning() {
-        if (!currentB2Card) return;
-        const name = getCardField(currentB2Card, 'name');
-        const nameEn = getCardField(currentB2Card, 'name_en');
-        const astrology = getCardField(currentB2Card, 'astrology');
-        const desc = getCardField(currentB2Card, 'desc');
-        const upright = getCardField(currentB2Card, 'upright');
-        const reversed = getCardField(currentB2Card, 'reversed');
-        
-        let text = `✨ 咪的天 - MeowTarot ✨\n\n`;
-        text += `卡牌：【${name}】 (${nameEn})\n`;
-        text += `占星：${astrology || '无'}\n\n`;
-        text += `【牌意解释】\n${desc}\n\n`;
-        text += `【正位】\n${upright}\n\n`;
-        text += `【逆位】\n${reversed}\n\n`;
-        text += `愿星辰指引你的道路。✨`;
-        
-        navigator.clipboard.writeText(text).then(() => {
-            showToast("该卡牌释义已成功复制！");
-        }).catch(() => {
-            showToast("复制失败，请手动选择复制");
-        });
-    }
-
+// B2 复制单张牌释义（中英双语版）
+function copySingleB2Meaning() {
+    if (!currentB2Card) return;
+    const name = getCardField(currentB2Card, 'name');
+    const nameEn = getCardField(currentB2Card, 'name_en');
+    const astrology = getCardField(currentB2Card, 'astrology');
+    const desc = getCardField(currentB2Card, 'desc');
+    const upright = getCardField(currentB2Card, 'upright');
+    const reversed = getCardField(currentB2Card, 'reversed');
+    
+    // 获取英文对应的牌义（兼容写法：优先通过 getCardField 获取，若未配置则直接从数据库对象中读取）
+    const descEn = getCardField(currentB2Card, 'desc_en') || currentB2Card['英文解释'] || '';
+    const uprightEn = getCardField(currentB2Card, 'upright_en') || currentB2Card['英文正位'] || '';
+    const reversedEn = getCardField(currentB2Card, 'reversed_en') || currentB2Card['英文逆位'] || '';
+    
+    let text = `卡牌：【${name}】 (${nameEn})\n`;
+    text += `占星：${astrology || '无'}\n\n`;
+    
+    // 中文释义部分
+    text += `【牌意解释】\n${desc}\n\n`;
+    text += `【正位】\n${upright}\n\n`;
+    text += `【逆位】\n${reversed}\n\n`;
+    
+    // 分割线
+    text += `--------------------------------\n\n`;
+    
+    // 英文释义部分
+    text += `[Card Meaning]\n${descEn}\n\n`;
+    text += `[Upright]\n${uprightEn}\n\n`;
+    text += `[Reversed]\n${reversedEn}\n\n`;
+    
+   
+    
+    navigator.clipboard.writeText(text).then(() => {
+        showToast("该卡牌双语释义已成功复制！");
+    }).catch(() => {
+        showToast("复制失败，请手动选择复制");
+    });
+}
     /* ==========================================
        5.9 资源预加载算法 (真实加载监听)
        ========================================== */
