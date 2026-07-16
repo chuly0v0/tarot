@@ -754,7 +754,7 @@
             width: 70px;
             height: 110px;
             background-color: #1a1a2e;
-            background-image: url('assets/img/card_back.webp');
+            background-image: url('assets/img/card_back.jpg');
             background-size: cover;
             background-position: center;
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -775,7 +775,7 @@
             width: 70px;
             height: 110px;
             background-color: #1a1a2e;
-            background-image: url('assets/img/card_back.webp');
+            background-image: url('assets/img/card_back.jpg');
             background-size: cover;
             background-position: center;
             border: 1px solid rgba(255, 255, 255, 0.3);
@@ -985,11 +985,11 @@
         <!-- 3D 洗牌动画叠加层 -->
         <div id="shuffle-overlay" class="shuffle-overlay">
             <div class="shuffle-deck" id="shuffle-deck">
-                <div class="shuffle-card s-card-1"><img src="assets/img/card_back.webp" alt="back"></div>
-                <div class="shuffle-card s-card-2"><img src="assets/img/card_back.webp" alt="back"></div>
-                <div class="shuffle-card s-card-3"><img src="assets/img/card_back.webp" alt="back"></div>
-                <div class="shuffle-card s-card-4"><img src="assets/img/card_back.webp" alt="back"></div>
-                <div class="shuffle-card s-card-5"><img src="assets/img/card_back.webp" alt="back"></div>
+                <div class="shuffle-card s-card-1"><img src="assets/img/card_back.jpg" alt="back"></div>
+                <div class="shuffle-card s-card-2"><img src="assets/img/card_back.jpg" alt="back"></div>
+                <div class="shuffle-card s-card-3"><img src="assets/img/card_back.jpg" alt="back"></div>
+                <div class="shuffle-card s-card-4"><img src="assets/img/card_back.jpg" alt="back"></div>
+                <div class="shuffle-card s-card-5"><img src="assets/img/card_back.jpg" alt="back"></div>
             </div>
         </div>
 
@@ -2233,7 +2233,7 @@
         });
 
         // 优化：在用户按下确认的瞬间开始预加载卡牌正面图片（进入浏览器缓存）
-        const imgPath = cardData.img || `assets/img/cards/${cardId}.webp`;
+        const imgPath = cardData.img || `assets/img/cards/${cardId}.jpg`;
         const preloader = new Image();
         preloader.src = imgPath;
 
@@ -2284,13 +2284,13 @@
         const container = document.getElementById('drawn-cards-container');
         const cardId = getCardField(res.card, 'id');
         const cardName = getCardField(res.card, 'name');
-        const imgPath = res.card.img || `assets/img/cards/${cardId}.webp`;
+        const imgPath = res.card.img || `assets/img/cards/${cardId}.jpg`;
 
         const cardHtml = `
             <div class="card-container" id="a3-card-${resultIndex}" onclick="flipCard(${resultIndex})">
                 <div class="card-inner">
                     <div class="card-back">
-                        <img src="assets/img/card_back.webp" alt="背面">
+                        <img src="assets/img/card_back.jpg" alt="背面">
                     </div>
                     <div class="card-front ${res.isReversed ? 'reversed' : ''}">
                         <img src="${imgPath}" alt="${cardName}">
@@ -2336,7 +2336,7 @@
             const name_en = getCardField(card, 'name_en');
             const descText = getCardField(card, 'desc');
             const posText = res.isReversed ? `逆位：${getCardField(card, 'reversed')}` : `正位：${getCardField(card, 'upright')}`;
-            const imgPath = card.img || `assets/img/cards/${cardId}.webp`;
+            const imgPath = card.img || `assets/img/cards/${cardId}.jpg`;
 
             const itemHtml = `
                 <div class="result-item">
@@ -2425,7 +2425,7 @@
         data.forEach(card => {
             const cardId = getCardField(card, 'id');
             const name = getCardField(card, 'name');
-            const imgPath = card.img || `assets/img/cards/${cardId}.webp`;
+            const imgPath = card.img || `assets/img/cards/${cardId}.jpg`;
             const itemHtml = `
                 <div class="grid-item" onclick="viewCardDetails(${cardId})">
                     <div class="grid-img-wrap">
@@ -2442,7 +2442,7 @@
         const card = tarotDatabase.find(c => getCardField(c, 'id') == cardId);
         if (!card) return;
         
-        document.getElementById('b2-card-img').src = card.img || `assets/img/cards/${cardId}.webp`;
+        document.getElementById('b2-card-img').src = card.img || `assets/img/cards/${cardId}.jpg`;
         document.getElementById('b2-card-title').innerText = `${getCardField(card, 'name')} (${getCardField(card, 'name_en')})`;
         
         const content = document.getElementById('b2-detail-content');
