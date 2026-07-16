@@ -156,11 +156,11 @@
             width: 80%;
         }
 
-        /* 2.2 A1 页面 */
+        /* 2.2 A1 页面 - 修改：将内容整体放置在下半屏 */
         #page-a1 {
-            justify-content: center;
+            justify-content: flex-end;
             align-items: center;
-            padding-top: 80px;
+            padding-bottom: 60px;
         }
 
         .a1-header-options {
@@ -219,10 +219,11 @@
             margin-right: 10px;
         }
 
-        /* 2.3 A2 页面 */
+        /* 2.3 A2 页面 - 修改：将内容整体放置在下半屏 */
         #page-a2 {
-            justify-content: center;
+            justify-content: flex-end;
             align-items: center;
+            padding-bottom: 120px;
             gap: 40px;
         }
 
@@ -429,6 +430,7 @@
             color: #e0e0ff;
         }
 
+        /* A4 底部栏 - 修改：移除了黑背景框和顶部边框 */
         .a4-footer {
             position: fixed;
             bottom: 0;
@@ -436,11 +438,11 @@
             transform: translateX(-50%);
             width: 100%;
             max-width: 480px;
-            background: rgba(13, 13, 26, 0.95);
+            background: transparent;
             padding: 16px 24px;
             display: flex;
             gap: 16px;
-            border-top: 1px solid var(--glass-border);
+            border-top: none;
             z-index: 10;
         }
 
@@ -611,6 +613,7 @@
             padding-left: 8px;
         }
 
+        /* B2 底部栏 - 修改：移除了黑背景框和顶部边框 */
         .b2-footer {
             position: fixed;
             bottom: 0;
@@ -618,11 +621,11 @@
             transform: translateX(-50%);
             width: 100%;
             max-width: 480px;
-            background: rgba(13, 13, 26, 0.95);
+            background: transparent;
             padding: 16px 24px;
             display: flex;
             gap: 16px;
-            border-top: 1px solid var(--glass-border);
+            border-top: none;
             z-index: 10;
         }
 
@@ -631,7 +634,7 @@
         }
 
         /* ==========================================
-           3. 动效系统 (3D洗牌 & 弹头报错)
+           3. 动效系统 (3D洗牌、弹头报错与新增抽牌过渡飞卡)
            ========================================== */
 
         /* 3D 洗牌动画叠加层 */
@@ -707,6 +710,103 @@
             0%, 100% { transform: translateX(0) rotate(0deg) translateZ(0); }
             35% { transform: translateX(80px) rotate(8deg) translateZ(-30px); }
             65% { transform: translateX(80px) rotate(8deg) translateZ(-30px); }
+        }
+
+        /* 3.1 新增：A3 页面抽牌动画层 */
+        .draw-anim-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(8, 8, 16, 0.7);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 150;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .draw-anim-overlay.active {
+            display: flex;
+        }
+
+        .anim-scene {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 一排叠放的牌 */
+        .anim-stack {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .anim-stack-card {
+            width: 70px;
+            height: 110px;
+            background-color: #1a1a2e;
+            background-image: url('assets/img/card_back.webp');
+            background-size: cover;
+            background-position: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            position: absolute;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 叠放位置微调 */
+        .anim-stack-card:nth-child(1) { transform: rotate(-10deg) translateX(-30px); }
+        .anim-stack-card:nth-child(2) { transform: rotate(-5deg) translateX(-15px); }
+        .anim-stack-card:nth-child(3) { transform: rotate(0deg); }
+        .anim-stack-card:nth-child(4) { transform: rotate(5deg) translateX(15px); }
+        .anim-stack-card:nth-child(5) { transform: rotate(10deg) translateX(30px); }
+
+        /* 飞牌出列动画 */
+        .flying-card {
+            width: 70px;
+            height: 110px;
+            background-color: #1a1a2e;
+            background-image: url('assets/img/card_back.webp');
+            background-size: cover;
+            background-position: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            margin-left: -35px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+            opacity: 0;
+        }
+
+        @keyframes fly-out-and-land {
+            0% {
+                transform: scale(1) translate(0, 0) rotate(0deg);
+                opacity: 0;
+            }
+            15% {
+                opacity: 1;
+                box-shadow: 0 15px 30px rgba(0,0,0,0.7);
+            }
+            100% {
+                /* 降落在中下部（12vh），并放大 1.8 倍 */
+                transform: scale(1.8) translateY(12vh) rotate(360deg);
+                opacity: 1;
+                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9);
+            }
+        }
+
+        .flying-card.animate {
+            animation: fly-out-and-land 1.2s cubic-bezier(0.25, 1, 0.3, 1) forwards;
         }
 
         /* 飘窗错误提示 */
@@ -893,6 +993,20 @@
             </div>
         </div>
 
+        <!-- 新增：飞牌动画层（过场动画） -->
+        <div id="draw-anim-overlay" class="draw-anim-overlay">
+            <div class="anim-scene">
+                <div class="anim-stack">
+                    <div class="anim-stack-card"></div>
+                    <div class="anim-stack-card"></div>
+                    <div class="anim-stack-card"></div>
+                    <div class="anim-stack-card"></div>
+                    <div class="anim-stack-card"></div>
+                </div>
+                <div id="flying-card" class="flying-card"></div>
+            </div>
+        </div>
+
         <!-- Toast 飘窗提示 -->
         <div id="toast" class="toast">提示信息</div>
     </div>
@@ -948,7 +1062,7 @@
             "占星对应": "金星",
             "解释": "皇后是创造的显化者，即大地之母。她邀请你重新与自然世界连接，并滋养我们所创造的一切。",
             "正位": "创造、丰饶、奢华、自然、愉悦",
-            "逆位": "忽视、优柔寡断、脱节、抗拒",
+            "逆位": "忽视、优柔孤断、脱节、抗拒",
             "英文解释": "The Empress is the manifestation of creation, the mother. She invites you to reconnect with the natural world and nourish what we have created",
             "英文正位": "Creation, abundance, luxury, nature, pleasure",
             "英文逆位": "Neglect, indecisiveness, disconnection, resistance"
@@ -1307,7 +1421,7 @@
             "英文名称": "Six of Cups",
             "占星对应": "巨蟹座、天蝎座、双鱼座",
             "解释": "圣杯牌组深入探讨你的情感状态与人际关系.当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
-            "正位": "纯真、怀旧、喜悦、重逢",
+            "正位": "纯真、怀旧、喜阅、重逢",
             "逆位": "匮乏、天真、虐待、失望",
             "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
             "英文正位": "Innocence, nostalgia, joy, reunion",
@@ -1466,7 +1580,7 @@
             "正位": "孤立、贫困、健康欠佳、不安全感",
             "逆位": "财务恢复、重拾信心、灵性、机遇",
             "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
-            "英文正位": "Isolation, poverty, poor health, insecurity",
+            "英文正位": "Value, poverty, poor health, insecurity",
             "英文逆位": "Financial recovery, renewed confidence, spirituality, opportunity"
         },
         {
@@ -1819,7 +1933,6 @@
         },
         {
             "序号": 77,
-            "权杖七": "权杖七",
             "塔罗牌名称": "权杖七",
             "英文名称": "Seven of Wands",
             "占星对应": "白羊座、狮子座、射手座",
@@ -1868,7 +1981,7 @@
         }
     ];
 
-    // 【安全卫士逻辑】如果你的 80 张牌还没完全录入完毕，这里会自动为缺失的 ID 补上标准占位，防止网页加载报错崩溃
+    // 如果 80 张牌未完全录入完毕，自动补上标准占位，防止网页加载报错崩溃
     for (let i = 1; i <= 80; i++) {
         const exists = tarotDatabase.some(c => getCardField(c, 'id') == i);
         if (!exists) {
@@ -1891,7 +2004,7 @@
         }
     }
 
-    // 重新按 ID 升序排序
+    // 按 ID 升序排序
     tarotDatabase.sort((a, b) => getCardField(a, 'id') - getCardField(b, 'id'));
 
 
@@ -2058,7 +2171,7 @@
     }
 
     /* ==========================================
-       5.6 A3 核心抽牌交互
+       5.6 A3 核心抽牌交互（深度改进性能与过场）
        ========================================== */
     function setupA3Page() {
         drawnIndices = [];
@@ -2085,6 +2198,7 @@
         }
     });
 
+    // 核心修改：在按下确认瞬间立即加载图片并播放飞卡过场
     function processDrawInput() {
         const inputEl = document.getElementById('card-input');
         const val = parseInt(inputEl.value);
@@ -2099,6 +2213,9 @@
             return;
         }
 
+        // 暂时锁定输入框，防止动画期间误操作
+        inputEl.disabled = true;
+
         drawnIndices.push(val);
         inputEl.value = "";
 
@@ -2111,21 +2228,57 @@
         drawnResult.push({
             inputIndex: val,
             card: cardData,
-            isReversed: isReversed
+            isReversed: isReversed,
+            isFlipped: false
         });
 
-        createA3CardUI(drawnResult.length - 1);
+        // 优化：在用户按下确认的瞬间开始预加载卡牌正面图片（进入浏览器缓存）
+        const imgPath = cardData.img || `assets/img/cards/${cardId}.webp`;
+        const preloader = new Image();
+        preloader.src = imgPath;
 
-        const drawnNum = drawnResult.length;
-        document.getElementById('drawn-count').innerText = drawnNum;
-        document.getElementById('pending-count').innerText = selectCount - drawnNum;
+        // 触发飞卡动画
+        playFlyingCardAnimation(() => {
+            // 动画完成后：渲染卡牌到界面中
+            createA3CardUI(drawnResult.length - 1);
 
-        if (drawnNum >= selectCount) {
-            inputEl.disabled = true;
-            checkViewMeaningButtonState();
-        }
+            const drawnNum = drawnResult.length;
+            document.getElementById('drawn-count').innerText = drawnNum;
+            document.getElementById('pending-count').innerText = selectCount - drawnNum;
+
+            if (drawnNum >= selectCount) {
+                inputEl.disabled = true;
+                checkViewMeaningButtonState();
+            } else {
+                // 如果还需要继续抽牌，恢复输入框并自动聚焦
+                inputEl.disabled = false;
+                inputEl.focus();
+            }
+        });
     }
 
+    // 执行纯代码过场飞卡动画
+    function playFlyingCardAnimation(callback) {
+        const animOverlay = document.getElementById('draw-anim-overlay');
+        const flyingCard = document.getElementById('flying-card');
+
+        // 显示叠加动画层
+        animOverlay.classList.add('active');
+
+        // 重置并触发 CSS 3D 飞卡动画
+        flyingCard.classList.remove('animate');
+        void flyingCard.offsetWidth; // 触发回流重绘
+        flyingCard.classList.add('animate');
+
+        // 动画时长 1.2秒 后隐藏动画层，执行实际的页面卡牌生成逻辑
+        setTimeout(() => {
+            animOverlay.classList.remove('active');
+            flyingCard.classList.remove('animate');
+            callback();
+        }, 1200);
+    }
+
+    // 去掉了 loading="lazy" 属性，结合提前预加载，保证瞬间展现无卡顿
     function createA3CardUI(resultIndex) {
         const res = drawnResult[resultIndex];
         const container = document.getElementById('drawn-cards-container');
@@ -2140,7 +2293,7 @@
                         <img src="assets/img/card_back.webp" alt="背面">
                     </div>
                     <div class="card-front ${res.isReversed ? 'reversed' : ''}">
-                        <img src="${imgPath}" alt="${cardName}" loading="lazy">
+                        <img src="${imgPath}" alt="${cardName}">
                     </div>
                 </div>
             </div>
@@ -2167,7 +2320,7 @@
     }
 
     /* ==========================================
-       5.7 A4 结果渲染 (已修正！完美调用表格中的解释、正位、逆位)
+       5.7 A4 结果渲染
        ========================================== */
     function goToA4() {
         navigate('page-a4', 'bg-video-a3-a4');
@@ -2181,7 +2334,7 @@
             const cardId = getCardField(card, 'id');
             const name_cn = getCardField(card, 'name');
             const name_en = getCardField(card, 'name_en');
-            const descText = getCardField(card, 'desc'); // 正确调用：解释
+            const descText = getCardField(card, 'desc');
             const posText = res.isReversed ? `逆位：${getCardField(card, 'reversed')}` : `正位：${getCardField(card, 'upright')}`;
             const imgPath = card.img || `assets/img/cards/${cardId}.webp`;
 
@@ -2231,10 +2384,9 @@
     }
 
     /* ==========================================
-       5.8 B1 牌义字典列表
+       5.8 B1 牌义字典列表 (补全缺失函数)
        ========================================== */
     let dictionaryInited = false;
-    const itemsPerPage = 9; 
     const pageStates = {
         major: { loaded: 0, data: [] },
         cups: { loaded: 0, data: [] },
@@ -2253,150 +2405,101 @@
 
     function initDictionaryData() {
         pageStates.major.data = tarotDatabase.filter(c => getCardField(c, 'id') <= 24);
-        pageStates.cups.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id >= 25 && id <= 38; });
-        pageStates.pentacles.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id >= 39 && id <= 52; });
-        pageStates.swords.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id >= 53 && id <= 66; });
-        pageStates.wands.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id >= 67 && id <= 80; });
+        pageStates.cups.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id > 24 && id <= 38; });
+        pageStates.pentacles.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id > 38 && id <= 52; });
+        pageStates.swords.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id > 52 && id <= 66; });
+        pageStates.wands.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id > 66 && id <= 80; });
 
-        loadNextPage('major');
-        loadNextPage('cups');
-        loadNextPage('pentacles');
-        loadNextPage('swords');
-        loadNextPage('wands');
-
-        const swiper = document.getElementById('b1-swiper');
-        swiper.addEventListener('scroll', updateActiveEmoji);
-
-        setupScrollLoad('slide-major', 'major');
-        setupScrollLoad('slide-cups', 'cups');
-        setupScrollLoad('slide-pentacles', 'pentacles');
-        setupScrollLoad('slide-swords', 'swords');
-        setupScrollLoad('slide-wands', 'wands');
+        // 渲染对应的滑动网格
+        renderGrid('major', 'grid-major');
+        renderGrid('cups', 'grid-cups');
+        renderGrid('pentacles', 'grid-pentacles');
+        renderGrid('swords', 'grid-swords');
+        renderGrid('wands', 'grid-wands');
     }
 
-    function loadNextPage(category) {
-        const state = pageStates[category];
-        if (state.loaded >= state.data.length) return;
-
-        const nextBatch = state.data.slice(state.loaded, state.loaded + itemsPerPage);
-        const grid = document.getElementById(`grid-${category}`);
-
-        nextBatch.forEach(card => {
-            const id = getCardField(card, 'id');
+    function renderGrid(type, gridId) {
+        const grid = document.getElementById(gridId);
+        grid.innerHTML = "";
+        const data = pageStates[type].data;
+        data.forEach(card => {
+            const cardId = getCardField(card, 'id');
             const name = getCardField(card, 'name');
-            const imgPath = card.img || `assets/img/cards/${id}.webp`;
-            
+            const imgPath = card.img || `assets/img/cards/${cardId}.webp`;
             const itemHtml = `
-                <div class="grid-item" onclick="viewCardDetail(${id})">
+                <div class="grid-item" onclick="viewCardDetails(${cardId})">
                     <div class="grid-img-wrap">
-                        <img src="${imgPath}" loading="lazy" alt="${name}">
+                        <img src="${imgPath}" alt="${name}" loading="lazy">
                     </div>
-                    <span>${id}.${name}</span>
+                    <span>${name}</span>
                 </div>
             `;
             grid.insertAdjacentHTML('beforeend', itemHtml);
         });
-
-        state.loaded += nextBatch.length;
     }
 
-    function setupScrollLoad(elementId, category) {
-        const el = document.getElementById(elementId);
-        el.addEventListener('scroll', () => {
-            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) {
-                loadNextPage(category);
-            }
+    function viewCardDetails(cardId) {
+        const card = tarotDatabase.find(c => getCardField(c, 'id') == cardId);
+        if (!card) return;
+        
+        document.getElementById('b2-card-img').src = card.img || `assets/img/cards/${cardId}.webp`;
+        document.getElementById('b2-card-title').innerText = `${getCardField(card, 'name')} (${getCardField(card, 'name_en')})`;
+        
+        const content = document.getElementById('b2-detail-content');
+        content.innerHTML = `
+            <div class="b2-section-title">占星对应</div>
+            <div>${getCardField(card, 'astrology') || '无'}</div>
+            <div class="b2-section-title">牌面解释</div>
+            <div>${getCardField(card, 'desc')}</div>
+            <div class="b2-section-title">正位牌义</div>
+            <div>${getCardField(card, 'upright')}</div>
+            <div class="b2-section-title">逆位牌义</div>
+            <div>${getCardField(card, 'reversed')}</div>
+        `;
+        
+        navigate('page-b2', 'bg-video-b');
+    }
+
+    function copySingleB2Meaning() {
+        const title = document.getElementById('b2-card-title').innerText;
+        const detail = document.getElementById('b2-detail-content').innerText;
+        const copyText = `🔮 咪的天「${title}」牌义解析 🔮\n\n${detail}`;
+        navigator.clipboard.writeText(copyText).then(() => {
+            showToast("牌义已复制到剪切板咪~");
+        }).catch(() => {
+            showToast("复制失败，请重试");
         });
     }
 
     function scrollToSlide(index) {
         const swiper = document.getElementById('b1-swiper');
-        const slides = swiper.querySelectorAll('.b1-slide');
-        slides[index].scrollIntoView({ behavior: 'smooth' });
+        const slideWidth = swiper.clientWidth;
+        swiper.scrollTo({
+            left: slideWidth * index,
+            behavior: 'smooth'
+        });
+        updateEmojiNav(index);
     }
 
-    function updateActiveEmoji() {
-        const swiper = document.getElementById('b1-swiper');
-        const scrollLeft = swiper.scrollLeft;
-        const width = swiper.clientWidth;
-        const activeIndex = Math.round(scrollLeft / width);
-
-        const emojis = document.querySelectorAll('.emoji-item');
-        emojis.forEach((em, idx) => {
+    function updateEmojiNav(activeIndex) {
+        const items = document.querySelectorAll('.emoji-nav .emoji-item');
+        items.forEach((item, idx) => {
             if (idx === activeIndex) {
-                em.classList.add('active');
+                item.classList.add('active');
             } else {
-                em.classList.remove('active');
+                item.classList.remove('active');
             }
         });
     }
 
-    /* ==========================================
-       5.9 B2 详情显示 (已修正！完美调用表格中的解释、正位、逆位)
-       ========================================== */
-    let activeDetailCard = null;
-
-    function viewCardDetail(id) {
-        const card = tarotDatabase.find(c => getCardField(c, 'id') == id);
-        activeDetailCard = card;
-
-        document.getElementById('b2-card-img').src = card.img || `assets/img/cards/${id}.webp`;
-        
-        const name_cn = getCardField(card, 'name');
-        const name_en = getCardField(card, 'name_en');
-        const astrology = getCardField(card, 'astrology');
-        
-        document.getElementById('b2-card-title').innerText = `${id}. ${name_cn} ${name_en ? '(' + name_en + ')' : ''}`;
-
-        const detailEl = document.getElementById('b2-detail-content');
-        
-        // 只有在数据中配置了占星对应才显示此段
-        let astroHtml = astrology && astrology !== "未关联" ? `<div class="b2-section-title">占星对应</div><p>${astrology}</p>` : '';
-        
-        detailEl.innerHTML = `
-            ${astroHtml}
-            <div class="b2-section-title">牌义释义</div>
-            <p style="line-height: 1.6; margin-bottom: 12px;">${getCardField(card, 'desc')}</p>
-            <div class="b2-section-title">正位</div>
-            <p style="line-height: 1.6; margin-bottom: 12px;">${getCardField(card, 'upright')}</p>
-            <div class="b2-section-title">逆位</div>
-            <p style="line-height: 1.6;">${getCardField(card, 'reversed')}</p>
-        `;
-
-        navigate('page-b2', 'bg-video-b');
-    }
-
-    function copySingleB2Meaning() {
-        if (!activeDetailCard) return;
-        const c = activeDetailCard;
-        
-        const name_cn = getCardField(c, 'name');
-        const name_en = getCardField(c, 'name_en');
-        const id = getCardField(c, 'id');
-        const desc_cn = getCardField(c, 'desc');
-        const desc_en = getCardField(c, 'desc_en');
-        const upright_cn = getCardField(c, 'upright');
-        const upright_en = getCardField(c, 'upright_en');
-        const reversed_cn = getCardField(c, 'reversed');
-        const reversed_en = getCardField(c, 'reversed_en');
-        
-        const copyText = 
-`${id}.${name_cn}${name_en ? '(' + name_en + ')' : ''}
-${desc_cn}
-正位：${upright_cn}
-逆位：${reversed_cn}
-
-${id}.${name_en || ''}
-${desc_en || ''}
-Upright: ${upright_en || ''}
-Reversed: ${reversed_en || ''}`;
-
-        navigator.clipboard.writeText(copyText).then(() => {
-            showToast("中英牌义已完整复制到剪切板咪~");
-        }).catch(() => {
-            showToast("复制失败");
-        });
-    }
-</script>
+    // 监听横向滑动事件同步 Emoji 激活
+    document.getElementById('b1-swiper').addEventListener('scroll', function() {
+        const swiper = this;
+        const scrollLeft = swiper.scrollLeft;
+        const slideWidth = swiper.clientWidth;
+        const index = Math.round(scrollLeft / slideWidth);
+        updateEmojiNav(index);
+    });
+   </script>
 </body>
 </html>
