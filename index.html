@@ -1,0 +1,2402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>咪的天 - MeowTarot</title>
+    <style>
+        /* ==========================================
+           1. 全局样式与变量定义
+           ========================================== */
+        @font-face {
+            font-family: 'SourceHanSerif';
+            src: url('assets/fonts/SourceHanSerif.otf') format('opentype');
+            font-display: swap;
+        }
+
+        :root {
+            --glass-bg: rgba(0, 0, 0, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --text-color: #FFFFFF;
+            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'SourceHanSerif', serif, sans-serif;
+            color: var(--text-color);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #000;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* 手机端黄金比例主容器 */
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            background-color: #0d0d1a;
+        }
+
+        /* 视频背景系统 */
+        .video-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            opacity: 0;
+        }
+
+        .video-bg.active {
+            opacity: 1;
+        }
+
+        /* 页面视图基础类（叠化转场） */
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            display: none;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .page.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* 经典毛玻璃卡片样式 */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        /* 统一样式按钮 */
+        .btn {
+            background: rgba(0, 0, 0, 0.15);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 14px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            display: inline-block;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* 返回按钮 */
+        .back-btn {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        /* ==========================================
+           2. 具体页面专属布局
+           ========================================== */
+
+        /* 2.1 首页 */
+        #page-home {
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 120px;
+        }
+
+        .home-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 80%;
+        }
+
+        /* 2.2 A1 页面 */
+        #page-a1 {
+            justify-content: center;
+            align-items: center;
+            padding-top: 80px;
+        }
+
+        .a1-header-options {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            display: flex;
+            gap: 12px;
+            font-size: 14px;
+            z-index: 10;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .checkbox-label input {
+            accent-color: #ff9dff;
+        }
+
+        .prompt-text {
+            font-size: 18px;
+            line-height: 1.8;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .a1-options {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .custom-input-wrap {
+            display: none;
+            margin-top: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .custom-input-wrap.active {
+            display: block;
+        }
+
+        .custom-input-wrap input {
+            width: 80px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        /* 2.3 A2 页面 */
+        #page-a2 {
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+        }
+
+        /* 2.4 A3 页面 */
+        #page-a3 {
+            padding-top: 80px;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .a3-status {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            text-align: right;
+            font-size: 14px;
+            line-height: 1.5;
+            z-index: 10;
+        }
+
+        .stack-img-container {
+            width: 100%;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .stack-img {
+            width: 100%;
+            max-width: 100%;
+            object-fit: contain;
+        }
+
+        .a3-control-area {
+            width: 100%;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .a3-prompt {
+            font-size: 15px;
+            margin-bottom: 12px;
+            color: #e0e0ff;
+        }
+
+        .a3-input-box {
+            width: 80%;
+            max-width: 250px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 18px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .a3-input-box:focus {
+            border-color: #ff9dff;
+        }
+
+        /* 抽取的卡牌显示区 */
+        .drawn-cards-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            width: 100%;
+            margin-top: 20px;
+            min-height: 150px;
+            padding-bottom: 100px;
+        }
+
+        /* 3D 卡牌翻转基础 */
+        .card-container {
+            width: 90px;
+            height: 150px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-container.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-back, .card-front {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .card-back {
+            background-color: #1a1a2e;
+            border: 1px solid var(--glass-border);
+        }
+
+        .card-back img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-front {
+            background-color: #000;
+            transform: rotateY(180deg);
+        }
+
+        .card-front img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 逆位卡牌视觉颠倒效果 */
+        .card-front.reversed img {
+            transform: rotate(180deg);
+        }
+
+        .a3-footer {
+            position: absolute;
+            bottom: 24px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 0 24px;
+        }
+
+        .a3-footer .btn {
+            width: 100%;
+        }
+
+        /* 2.5 A4 页面 */
+        #page-a4 {
+            padding-top: 60px;
+        }
+
+        .results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            margin-bottom: 100px;
+        }
+
+        .result-item {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .result-img-container {
+            width: 35%;
+            aspect-ratio: 9/16;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .result-img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .result-img-container.reversed img {
+            transform: rotate(180deg);
+        }
+
+        .result-detail {
+            width: 65%;
+            text-align: left;
+            padding: 16px;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .result-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #ff9dff;
+        }
+
+        .result-desc {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #e0e0ff;
+        }
+
+        .a4-footer {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: rgba(13, 13, 26, 0.95);
+            padding: 16px 24px;
+            display: flex;
+            gap: 16px;
+            border-top: 1px solid var(--glass-border);
+            z-index: 10;
+        }
+
+        .a4-footer .btn {
+            flex: 1;
+        }
+
+        /* 2.6 B1 页面 */
+        #page-b1 {
+            padding: 0;
+            display: none;
+        }
+
+        #page-b1.active {
+            display: flex;
+        }
+
+        /* B1 头部 Emoji 导航栏 */
+        .b1-header {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: rgba(13, 13, 26, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 15;
+            border-bottom: 1px solid var(--glass-border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .b1-back-btn {
+            font-size: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .emoji-nav {
+            display: flex;
+            gap: 14px;
+        }
+
+        .emoji-nav   .emoji-item {
+            font-size: 20px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s;
+            padding: 4px;
+        }
+
+        .emoji-nav .emoji-item.active {
+            opacity: 1;
+            transform: scale(1.15);
+        }
+
+        /* B1 横向滑动 Swiper */
+        .b1-swiper-container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            scrollbar-width: none; /* Hide scrollbar for Firefox */
+        }
+
+        .b1-swiper-container::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Chrome/Safari */
+        }
+
+        .b1-slide {
+            flex-shrink: 0;
+            width: 100%;
+            height: 100%;
+            scroll-snap-align: start;
+            padding: 80px 20px 20px 20px;
+            overflow-y: auto;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding-bottom: 60px;
+        }
+
+        .grid-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .grid-img-wrap {
+            width: 100%;
+            aspect-ratio: 9/16;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .grid-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .grid-item span {
+            font-size: 12px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        /* 2.7 B2 页面 */
+        #page-b2 {
+            padding-top: 80px;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .b2-img-container {
+            width: 50%;
+            max-width: 220px;
+            aspect-ratio: 9/16;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+        }
+
+        .b2-img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .b2-card-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 24px;
+            color: #ff9dff;
+        }
+
+        .b2-detail-card {
+            width: 100%;
+            text-align: left;
+            margin-bottom: 100px;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        .b2-section-title {
+            font-weight: bold;
+            color: #ff9dff;
+            margin-top: 14px;
+            margin-bottom: 4px;
+            border-left: 3px solid #ff9dff;
+            padding-left: 8px;
+        }
+
+        .b2-footer {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: rgba(13, 13, 26, 0.95);
+            padding: 16px 24px;
+            display: flex;
+            gap: 16px;
+            border-top: 1px solid var(--glass-border);
+            z-index: 10;
+        }
+
+        .b2-footer .btn {
+            flex: 1;
+        }
+
+        /* ==========================================
+           3. 动效系统 (3D洗牌 & 弹头报错)
+           ========================================== */
+
+        /* 3D 洗牌动画叠加层 */
+        .shuffle-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(8, 8, 16, 0.95);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .shuffle-overlay.active {
+            display: flex;
+        }
+
+        .shuffle-deck {
+            position: relative;
+            width: 120px;
+            height: 200px;
+            perspective: 1000px;
+        }
+
+        .shuffle-card {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            transform-origin: center;
+        }
+
+        .shuffle-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 扇形穿插洗牌动画序列 */
+        .shuffling .s-card-1 { animation: shuffle-left 1.5s cubic-bezier(0.25, 1, 0.5, 1) infinite; }
+        .shuffling .s-card-2 { animation: shuffle-right 1.5s cubic-bezier(0.25, 1, 0.5, 1) infinite; }
+        .shuffling .s-card-3 { animation: shuffle-mid-left 1.5s cubic-bezier(0.25, 1, 0.5, 1) infinite; }
+        .shuffling .s-card-4 { animation: shuffle-mid-right 1.5s cubic-bezier(0.25, 1, 0.5, 1) infinite; }
+        .shuffling .s-card-5 { transform: translateZ(10px); }
+
+        @keyframes shuffle-left {
+            0%, 100% { transform: translateX(0) rotate(0deg) translateZ(0); }
+            30% { transform: translateX(-160px) rotate(-18deg) translateZ(-20px); }
+            70% { transform: translateX(-160px) rotate(-18deg) translateZ(-20px); }
+        }
+
+        @keyframes shuffle-right {
+            0%, 100% { transform: translateX(0) rotate(0deg) translateZ(0); }
+            30% { transform: translateX(160px) rotate(18deg) translateZ(-40px); }
+            70% { transform: translateX(160px) rotate(18deg) translateZ(-40px); }
+        }
+
+        @keyframes shuffle-mid-left {
+            0%, 100% { transform: translateX(0) rotate(0deg) translateZ(0); }
+            35% { transform: translateX(-80px) rotate(-8deg) translateZ(-10px); }
+            65% { transform: translateX(-80px) rotate(-8deg) translateZ(-10px); }
+        }
+
+        @keyframes shuffle-mid-right {
+            0%, 100% { transform: translateX(0) rotate(0deg) translateZ(0); }
+            35% { transform: translateX(80px) rotate(8deg) translateZ(-30px); }
+            65% { transform: translateX(80px) rotate(8deg) translateZ(-30px); }
+        }
+
+        /* 飘窗错误提示 */
+        .toast {
+            position: absolute;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(255, 75, 75, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 75, 75, 0.4);
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            z-index: 200;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- 背景视频层 (复用机制) -->
+        <video id="bg-video-home" class="video-bg active" loop muted playsinline poster="assets/img/first_frame/home_first.webp">
+            <source src="assets/video/home_bg.mp4" type="video/mp4">
+        </video>
+        <video id="bg-video-a1-a2" class="video-bg" loop muted playsinline poster="assets/img/first_frame/a1_a2_first.webp">
+            <source src="assets/video/a1_a2_bg.mp4" type="video/mp4">
+        </video>
+        <video id="bg-video-a3-a4" class="video-bg" loop muted playsinline poster="assets/img/first_frame/a3_a4_first.webp">
+            <source src="assets/video/a3_a4_bg.mp4" type="video/mp4">
+        </video>
+        <video id="bg-video-b" class="video-bg" loop muted playsinline poster="assets/img/first_frame/b_first.webp">
+            <source src="assets/video/b_bg.mp4" type="video/mp4">
+        </video>
+
+        <!-- ==========================================
+           4. 页面结构 (DOM)
+           ========================================== -->
+
+        <!-- 首页 -->
+        <div id="page-home" class="page active">
+            <div class="home-buttons">
+                <button class="btn glass-card" onclick="goToA1()">开始占卜</button>
+                <button class="btn glass-card" onclick="goToB1()">查看牌义</button>
+            </div>
+        </div>
+
+        <!-- A1 页面 -->
+        <div id="page-a1" class="page">
+            <button class="back-btn" onclick="backToHome()">←</button>
+            <div class="a1-header-options">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-major" checked onchange="validateCheckboxes()"> 大阿卡纳牌
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-minor" checked onchange="validateCheckboxes()"> 小阿卡纳牌
+                </label>
+            </div>
+            
+            <div class="prompt-text">
+                人你好，我是小猫塔罗师。<br>今天你想抽几张牌？
+            </div>
+
+            <div class="a1-options">
+                <button class="btn glass-card" onclick="setCardCount(1)">我想抽一张！<br><span style="font-size:12px;opacity:0.7;">（是非题、每日运势等）</span></button>
+                <button class="btn glass-card" onclick="setCardCount(3)">我想抽三张！<br><span style="font-size:12px;opacity:0.7;">（过去/现在/未来、现状等）</span></button>
+                <div class="glass-card" style="padding: 14px;">
+                    <button class="btn" style="border:none; background:none; padding:0; width:100%;" onclick="toggleCustomInput()">自定义张数 (1-10)</button>
+                    <div id="custom-input-wrap" class="custom-input-wrap">
+                        <input type="number" id="custom-count" min="1" max="10" placeholder="3">
+                        <button class="btn" style="padding: 6px 12px; font-size:14px;" onclick="confirmCustomCount()">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- A2 页面 -->
+        <div id="page-a2" class="page">
+            <div class="prompt-text" style="margin-bottom:0;">
+                人，请在心里默念你的问题<br>咪要开始洗牌了
+            </div>
+            <button class="btn glass-card" style="width: 60%;" onclick="startShuffleTransition()">准备好了</button>
+        </div>
+
+        <!-- A3 页面 -->
+        <div id="page-a3" class="page">
+            <button class="back-btn" onclick="navigate('page-a1', 'bg-video-a1-a2')">←</button>
+            <div class="a3-status">
+                已抽：<span id="drawn-count">0</span><br>
+                待抽：<span id="pending-count">0</span>
+            </div>
+
+            <div class="stack-img-container">
+                <img src="assets/img/card_stack.webp" class="stack-img" alt="叠卡">
+            </div>
+
+            <div class="a3-control-area">
+                <div class="a3-prompt" id="input-prompt-text">请输入1-80之间的数字</div>
+                <input type="number" id="card-input" class="a3-input-box" placeholder="输入后按回车">
+            </div>
+
+            <div class="drawn-cards-container" id="drawn-cards-container">
+                <!-- 动态生成抽取的卡牌 -->
+            </div>
+
+            <div class="a3-footer">
+                <button id="btn-view-meaning" class="btn glass-card disabled" onclick="goToA4()">查看牌义</button>
+            </div>
+        </div>
+
+        <!-- A4 页面 -->
+        <div id="page-a4" class="page">
+            <div class="results-list" id="results-list">
+                <!-- 动态渲染抽牌细节 -->
+            </div>
+            <div class="a4-footer">
+                <button class="btn glass-card" onclick="copyAllA4Meaning()">复制牌义</button>
+                <button class="btn glass-card" onclick="backToHome()">返回首页</button>
+            </div>
+        </div>
+
+        <!-- B1 页面 -->
+        <div id="page-b1" class="page">
+            <div class="b1-header">
+                <button class="b1-back-btn" onclick="backToHome()">←</button>
+                <div class="emoji-nav">
+                    <span class="emoji-item active" onclick="scrollToSlide(0)">🌟</span>
+                    <span class="emoji-item" onclick="scrollToSlide(1)">🥂</span>
+                    <span class="emoji-item" onclick="scrollToSlide(2)">🪙</span>
+                    <span class="emoji-item" onclick="scrollToSlide(3)">⚔️</span>
+                    <span class="emoji-item" onclick="scrollToSlide(4)">🧙🏻‍♀️</span>
+                </div>
+            </div>
+
+            <div class="b1-swiper-container" id="b1-swiper">
+                <!-- Swiper 5大幻灯片 -->
+                <div class="b1-slide" id="slide-major"><div class="cards-grid" id="grid-major"></div></div>
+                <div class="b1-slide" id="slide-cups"><div class="cards-grid" id="grid-cups"></div></div>
+                <div class="b1-slide" id="slide-pentacles"><div class="cards-grid" id="grid-pentacles"></div></div>
+                <div class="b1-slide" id="slide-swords"><div class="cards-grid" id="grid-swords"></div></div>
+                <div class="b1-slide" id="slide-wands"><div class="cards-grid" id="grid-wands"></div></div>
+            </div>
+        </div>
+
+        <!-- B2 页面 -->
+        <div id="page-b2" class="page">
+            <button class="back-btn" onclick="navigate('page-b1', 'bg-video-b')">←</button>
+            <div class="b2-img-container">
+                <img id="b2-card-img" src="" alt="card">
+            </div>
+            <div class="b2-card-title" id="b2-card-title"></div>
+            <div class="glass-card b2-detail-card" id="b2-detail-content">
+                <!-- 动态填充 -->
+            </div>
+            <div class="b2-footer">
+                <button class="btn glass-card" onclick="copySingleB2Meaning()">复制牌义</button>
+                <button class="btn glass-card" onclick="navigate('page-b1', 'bg-video-b')">返回</button>
+            </div>
+        </div>
+
+        <!-- 3D 洗牌动画叠加层 -->
+        <div id="shuffle-overlay" class="shuffle-overlay">
+            <div class="shuffle-deck" id="shuffle-deck">
+                <div class="shuffle-card s-card-1"><img src="assets/img/card_back.webp" alt="back"></div>
+                <div class="shuffle-card s-card-2"><img src="assets/img/card_back.webp" alt="back"></div>
+                <div class="shuffle-card s-card-3"><img src="assets/img/card_back.webp" alt="back"></div>
+                <div class="shuffle-card s-card-4"><img src="assets/img/card_back.webp" alt="back"></div>
+                <div class="shuffle-card s-card-5"><img src="assets/img/card_back.webp" alt="back"></div>
+            </div>
+        </div>
+
+        <!-- Toast 飘窗提示 -->
+        <div id="toast" class="toast">提示信息</div>
+    </div>
+
+    <!-- ==========================================
+       5. 魔法逻辑系统 (JavaScript)
+       ========================================== -->
+   <script>
+    /* ==========================================
+       5.1 塔罗牌万能适配数据库 (支持中英文自定义列名)
+       ========================================== */
+    const tarotDatabase = [
+        {
+            "序号": 1,
+            "塔罗牌名称": "愚人",
+            "英文名称": "The Fool",
+            "占星对应": "天王星",
+            "解释": "愚人象征着我们踏上旅程时心中那份纯真的精神。这张牌可能出现在我们人生道路的起点（出生）或终点（转化）。每一个位置都标志着一个新的开始——去创造、保持无限的信念，并自由地拥抱机遇！",
+            "正位": "潜能、新的开始、机遇、冒险",
+            "逆位": "粗心、疏忽、不确定、冷漠",
+            "英文解释": "The Fool is the spirit of innocence in all of us as we begin our journey. This card may be at the beginning(birth) or the end (transformation) of our path. Each position marks the start of be creative, have boundless faith, and freely embrace opportunities!",
+            "英文正位": "Potential, new beginnings, opportunity, adventure",
+            "英文逆位": "Carelessness, negligence, uncertainty, apathy"
+        },
+        {
+            "序号": 2,
+            "塔罗牌名称": "魔术师",
+            "英文名称": "The Magician",
+            "占星对应": "水星",
+            "解释": "魔术师连接着精神与物质——他代表'如其在上，如其在下'。他是四大元素（土、风、火、水）的主宰。他告诉你，你拥有将愿望显化为现实的所有工具。创造力、技巧、专注与渴望是他为你揭示的力量，助你达成任何目标。",
+            "正位": "技巧、自信、行动、专注、成就",
+            "逆位": "不安、缺乏规划、无力感、拖延、傲慢",
+            "英文解释": "The Magician connects the spirit tothe physical--He represents 'as above,so below'. He is the master of all four elements: earth, air, fire and water. He is telling you that you hold all the tools to manifest your desires into reality. Creativity, skill, focus and desire are the forces he reveals to you in order to accomplish any goal",
+            "英文正位": "Skill, confidence, action, concentration, accomplishment",
+            "英文逆位": "Unease, lack of planning, powerlessness, procrastination, arrogance"
+        },
+        {
+            "序号": 3,
+            "塔罗牌名称": "女祭司",
+            "英文名称": "High Priestess",
+            "占星对应": "月亮",
+            "解释": "女祭司代表智慧与启迪。她处于两个世界之间，体现了永恒的女性精神。她是内在的守护者，指引我们聆听自己的感受与直觉。",
+            "正位": "潜意识、智慧、阿尼玛、宁静、神秘",
+            "逆位": "压抑、不信任、秘密、丧失",
+            "英文解释": "The High Priestess represents wisdom and enlightenment. She is in-between two worlds and embodies the eternal feminine spirit. She is the guardian of inward and listen to our own feelings and intuition",
+            "英文正位": "The subconscious, wisdom, anima, serenity, mystery",
+            "英文逆位": "Repression, mistrust, secrets, loss"
+        },
+        {
+            "序号": 4,
+            "塔罗牌名称": "皇后",
+            "英文名称": "The Empress",
+            "占星对应": "金星",
+            "解释": "皇后是创造的显化者，即大地之母。她邀请你重新与自然世界连接，并滋养我们所创造的一切。",
+            "正位": "创造、丰饶、奢华、自然、愉悦",
+            "逆位": "忽视、优柔寡断、脱节、抗拒",
+            "英文解释": "The Empress is the manifestation of creation, the mother. She invites you to reconnect with the natural world and nourish what we have created",
+            "英文正位": "Creation, abundance, luxury, nature, pleasure",
+            "英文逆位": "Neglect, indecisiveness, disconnection, resistance"
+        },
+        {
+            "序号": 5,
+            "塔罗牌名称": "皇帝",
+            "英文名称": "The Emperor",
+            "占星对应": "白羊座",
+            "解释": "皇帝是阳性能量，即父亲。他能够平息混乱并提供权威的指引。他散发出领袖、保护者和供养者的特质，但如果被反对，也可能表现得冷酷无情。",
+            "正位": "权力、结构、父权能量、统治、成功",
+            "逆位": "刻板、无力感、回避、混乱",
+            "英文解释": "The Emperor is masculine energy, the father. He is able to calm chaos and offer authoritarian guidance. He exudes the traits of leader, protector, and provider but can be ruthless if disagreed with",
+            "英文正位": "Power, structure, patriarchal energy, domination, success",
+            "英文逆位": "Rigidity, powerlessness, avoidance, chaos"
+        },
+        {
+            "序号": 6,
+            "塔罗牌名称": "教皇",
+            "英文名称": "The Hierophant",
+            "占星对应": "金牛座",
+            "解释": "教皇是体制的物质化身。他在正式、严谨的体系内解读并传播秘密知识。当你寻求知识时，他将引导你通过既定的教育结构和传统去发现真理。",
+            "正位": "传统、指引、灵性、正统、体制",
+            "逆位": "伪善、反叛、腐败、不服从",
+            "英文解释": "The Hierophant is the physical embodiment of institution. He interprets secret knowledge to share within a formal, rigid system. When seeking knowledge, he will guide you to discovery through established educational structures and traditions",
+            "英文正位": "Tradition, guidance, spirituality, orthodoxy, institution",
+            "英文逆位": "Hypocrisy, rebellion, corruption, disobedience"
+        },
+        {
+            "序号": 7,
+            "塔罗牌名称": "恋人",
+            "英文名称": "The Lovers",
+            "占星对应": "双子座",
+            "解释": "恋人代表二元性的统一。他们象征着一种将两个实体结合在一起以创造完整性的力量——无论是关系、事件、个人决定还是思想。恋人要求你与自己进行坦诚的沟通，并在思考选择哪条道路时审视你的动机与价值观。",
+            "正位": "结合、选择、和谐、关系",
+            "逆位": "分离、失衡、冲突、脱节",
+            "英文解释": "The Lovers represents the union of duality. They signify a force that binds two entities together to create wholeness--whether it is a relationship, an event, a personal decision, or ideas. The Lovers asks you to have open communication with yourself and examine your motives and values when contemplating which path to take",
+            "英文正位": "Unification, choices, harmony, relationships",
+            "英文逆位": "Separation, imbalance, conflict, disconnection"
+        },
+        {
+            "序号": 8,
+            "塔罗牌名称": "战车",
+            "英文名称": "The Chariot",
+            "占星对应": "巨蟹座",
+            "解释": "战车代表面对任何挑战时的意志力、决心和自信。驾车人提醒我们要坚定不移，并在发生状况时展现自我控制，以确保战胜一切障碍。",
+            "正位": "征服、控制、胜利、动力",
+            "逆位": "攻击性、自我怀疑、失败、失去控制",
+            "英文解释": "The Chariot represents willpower, determination, and self-assurance in any challenge. The charioteer reminds us to be steadfast and exude self-control in situations that arise in order to ensure victory over any obstacle",
+            "英文正位": "Conquest, control, victory, motivation",
+            "英文逆位": "Aggression, self-doubt, defeat, loss of control"
+        },
+        {
+            "序号": 9,
+            "塔罗牌名称": "力量",
+            "英文名称": "Strength",
+            "占星对应": "狮子座",
+            "解释": "力量牌提醒我们，真正的力量源于内心。通过耐心、温柔与慈悲，一个人可以克服障碍而无需诉诸物理层面的攻击。女人与狮子象征着我们需要驯服内心的野兽，找到平衡。",
+            "正位": "内心平静、勇气、控制、耐心",
+            "逆位": "挣扎、愤怒、狂暴、骄傲",
+            "英文解释": "The Strength card reminds us that true power comes from within. Through patience, gentleness and compassion one can overcome obstacles without resorting to physical aggression. The woman and the lion signify that we need to tame the beast within ourselves and find balance",
+            "英文正位": "Inner calm, courage, control, patience",
+            "英文逆位": "Struggle, anger, rage, pride"
+        },
+        {
+            "序号": 10,
+            "塔罗牌名称": "隐士",
+            "英文名称": "The Hermit",
+            "占星对应": "处女座",
+            "解释": "隐士建议你，现在是反思的时刻。你必须向内寻找真相与智慧，因为你所需要的一切知识都蕴藏在内心。保持冷静与自省；不要让外部世界分散你对内在讯息的关注。",
+            "正位": "内省、启蒙、孤独、反思",
+            "逆位": "孤立、愚昧、退缩、抑郁",
+            "英文解释": "The Hermit advises you that now is a time for reflection. You must look inward for truth and wisdom, for you have all the knowledge you need inside. Be calm and reflective; do not let the outside world distract you from the messages you hold within",
+            "英文正位": "Introspection, enlightenment, solitude, reflection",
+            "英文逆位": "Isolation, foolishness, withdrawal, depression"
+        },
+        {
+            "序号": 11,
+            "塔罗牌名称": "命运之轮",
+            "英文名称": "Wheel of Fortune",
+            "占星对应": "木星",
+            "解释": "命运之轮显示机遇是充盈的。万物皆有循环，有好亦有坏。一种循环让你感激另一种，且每一者都能为当前面对的情况提供新的选择。",
+            "正位": "幸运、改变、业力、天命",
+            "逆位": "不幸、混乱、恶运、抗拒",
+            "英文解释": "The Wheel of Fortune shows that opportunity is abundant. All things have a cycle, both good and bad. One makes you appreciate the other and each can offer new options to the situations faced",
+            "英文正位": "Luck, change, karma, destiny",
+            "英文逆位": "Misfortune, chaos, bad luck, resistance"
+        },
+        {
+            "序号": 12,
+            "塔罗牌名称": "正义",
+            "英文名称": "Justice",
+            "占星对应": "天秤座",
+            "解释": "正义牌揭示了结果将由你所做的决定来决定。它提醒你，未来的行动可以因你现在学到的教训而改变。它是一个需要做出决定的指示。",
+            "正位": "真理、公正、平等、平衡",
+            "逆位": "争执、不诚实、缺乏责任感、腐败",
+            "英文解释": "The Justice card reveals that an outcome will be determined from the decisions you have made. It is a reminder that future actions can be changed by the lessons you learn in the present. It is an indicator that a decision needs to be made",
+            "英文正位": "Truth, fairness, equality, balance",
+            "英文逆位": "Dispute, dishonesty, lack of accountability, corruption"
+        },
+        {
+            "序号": 13,
+            "塔罗牌名称": "倒吊人",
+            "英文名称": "The Hanged Man",
+            "占星对应": "海王星",
+            "解释": "倒吊人暗示是时候结束旧有的方式，释放那些束缚你的生活限制。这是一个不行动与反思的时刻，以便让新的机遇得以显现。你必须愿意牺牲某些东西，才能获得新的收获。",
+            "正位": "牺牲、释放、新的视角、臣服",
+            "逆位": "犹豫不决、错觉、延迟、错失良机",
+            "英文解释": "The Hanged Man is an indication that it is time to end old ways and release the restrictions that are holding you back in life. It is a time for inaction and reflection in order for new opportunities to manifest. You must be willing to sacrifice something to gain something new",
+            "英文正位": "Sacrifice, release, new perspective, surrender",
+            "英文逆位": "Indecision, delusion, delay, missed opportunity"
+        },
+        {
+            "序号": 14,
+            "塔罗牌名称": "死神",
+            "英文名称": "Death",
+            "占星对应": "天蝎座",
+            "解释": "死神是转化的先驱。他提醒你必须摆脱陈旧与熟悉的事物，才能成为崭新的自我。你必须打破旧习，释放那些阻碍你的东西，为更伟大的事物腾出空间。",
+            "正位": "改变、终结、开始、过渡",
+            "逆位": "抗拒、停滞、固着、执念",
+            "英文解释": "Death is the harbinger of transformation. He is a reminder that you must shed what is old and familiar to become something new. You must break old habits and release that which is hindering you to make room for something greater",
+            "英文正位": "Change, endings, beginnings, transition",
+            "英文逆位": "Resistance, stagnant, immobility, obsession"
+        },
+        {
+            "序号": 15,
+            "塔罗牌名称": "节制",
+            "英文名称": "Temperance",
+            "占星对应": "射手座",
+            "解释": "当生活中需要平衡对立面时，节制牌会出现。你被要求保持耐心，重新审视生活中那些处于失调状态的优先事项。节制通过为你指明生命的意义与目的来提供辅助。",
+            "正位": "平衡、和谐、目的、节制",
+            "逆位": "竞争、挫折、过度、失衡",
+            "英文解释": "Temperance appears when there is a need for balance of opposing areas in your life. You are being asked to be patient and re-examine priorities in your life that are in disharmony. Temperance assists us by pointing you to life's meaning and purpose",
+            "英文正位": "Balance, harmony, purpose, moderation",
+            "英文逆位": "Competition, frustration, excess, imbalance"
+        },
+        {
+            "序号": 16,
+            "塔罗牌名称": "魔鬼",
+            "英文名称": "The Devil",
+            "占星对应": "土星",
+            "解释": "魔鬼向你展示，那些束缚你的问题是一种幻象；这种束缚是你自己造成的。是时候问问自己，到底是什么在阻碍你？你真的无力改变现状吗？",
+            "正位": "上瘾、执念、控制、物质主义",
+            "逆位": "超脱、自由、觉知、脆弱",
+            "英文解释": "The Devil shows you that the problems that constrain you are an illusion; the binding is of your own. It is time to ask yourself what is it that holds you back and are you truly helpless to change the situation?",
+            "英文正位": "Addiction, obsession, control, materialism",
+            "英文逆位": "Detachment, freedom, awareness, vulnerability"
+        },
+        {
+            "序号": 17,
+            "塔罗牌名称": "高塔",
+            "英文名称": "The Tower",
+            "占星对应": "火星",
+            "解释": "当高塔出现时，意味着你生活在幻象中。你必须摘下假面，揭露真相，从而改变现状。改变是艰难的；你会被震动，熟悉的一切会被拆解并从你的舒适区中移除。高塔提醒你要学会放手，让自我坠落。",
+            "正位": "剧变、改变、觉醒、冲击",
+            "逆位": "否认、逃避、恐惧、勉强",
+            "英文解释": "The Tower shows up when you are living in an illusion. You must remove the mask and expose the truth of the situation in order to change it. Change is difficult; you will be shaken, the familiar will be broken down and removed from your comfort zone. The Tower reminds you to let go and let the ego fall away",
+            "英文正位": "Upheaval, change, awakening, shock",
+            "英文逆位": "Denial, avoidance, fear, reluctance"
+        },
+        {
+            "序号": 18,
+            "塔罗牌名称": "星星",
+            "英文名称": "The Star",
+            "占星对应": "水瓶座",
+            "解释": "星星是你进入人生新阶段时所寻求的光芒。她提醒你与宇宙相连，你所寻求的所有智慧都触手可及。星星告诉你，现在是拥抱新思想与成长的时候。",
+            "正位": "更新、希望、宁静、清晰",
+            "逆位": "困惑、绝望、信念的考验、消极",
+            "英文解释": "The Star is the light you seek when you enter a new phase of life. She reminds you that you are connected to the universe and all the wisdom you seek is available. The Star shows you that now is the time to embrace new ideas and growth",
+            "英文正位": "Renewal, hope, serenity, clarity",
+            "英文逆位": "Confusion, despair, test of faith, negativity"
+        },
+        {
+            "序号": 19,
+            "塔罗牌名称": "月亮",
+            "英文名称": "The Moon",
+            "占星对应": "双鱼座",
+            "解释": "月亮代表转化；你正处于一个蜕变的时期。你开始意识到阴影自我的存在，以及其中蕴含的教训。这张牌提醒你，恐惧是一种幻象，你需要清除消极情绪，并利用内在的觉知去寻找答案。",
+            "正位": "直觉、幻象、恐惧、潜意识",
+            "逆位": "挫折、困惑、不幸、怀疑",
+            "英文解释": "The Moon is transformational; you are at a time of metamorphosis. You become aware of your shadow self and the lessons that lie within. The card reminds you that fear is an illusion and you will need to purge negativity and tap into your inner awareness for answers",
+            "英文正位": "Intuition, illusion, fear, subconscious",
+            "英文逆位": "Frustration, confusion, unhappiness, disbelief"
+        },
+        {
+            "序号": 20,
+            "塔罗牌名称": "太阳",
+            "英文名称": "The Sun",
+            "占星对应": "太阳",
+            "解释": "太阳牌将自信与觉醒的光芒照耀在你身上。这是拥抱生活乐趣，将黑暗与困惑留在身后的时刻。",
+            "正位": "积极、成功、喜悦、乐观",
+            "逆位": "自私、自负、悲伤、抑郁",
+            "英文解释": "The Sun card shines down confidence and awakening upon you. It is a time to embrace the joys in life and leave darkness and confusion behind",
+            "英文正位": "Positivity, success, joy, optimism",
+            "英文逆位": "Selfishness, egotistical, sadness, depression"
+        },
+        {
+            "序号": 21,
+            "塔罗牌名称": "审判",
+            "英文名称": "Judgement",
+            "占星对应": "冥王星",
+            "解释": "审判牌出现时，是自我评估的时候。你正处于迈向新生活的关键点，必须清除那些阻碍你获得重生的因素。",
+            "正位": "重生、赦免、更新、自由",
+            "逆位": "自我怀疑、拒绝、阻碍、停滞",
+            "英文解释": "Judgement shows when it is time for self-evaluation. You are at a crux for reaching a new life and must purge those things that would hinder you from being renewed",
+            "英文正位": "Rebirth, absolution, renewal, freedom",
+            "英文逆位": "Self-doubt, rejection, blockage, stagnation"
+        },
+        {
+            "序号": 22,
+            "塔罗牌名称": "世界",
+            "英文名称": "The World",
+            "占星对应": "土星",
+            "解释": "世界是你旅程的最终目的地。你对自己在宇宙中的角色有了更深层的理解，所有的努力都已圆满。",
+            "正位": "圆满、满足、旅行、实现",
+            "逆位": "后悔、未完成、缺乏终结、怀疑",
+            "英文解释": "The World is the final destination of your journey. You have a deeper understanding of your role in the universe and all of your efforts have come full circle",
+            "英文正位": "Completion, satisfaction, travel, fulfillment",
+            "英文逆位": "Regret, incomplete, lack of closure, doubt"
+        },
+        {
+            "序号": 23,
+            "塔罗牌名称": "井",
+            "英文名称": "The Well",
+            "占星对应": "盖亚（大地女神）",
+            "解释": "井是思想、灵感与转化的源头。万物皆由这位创世母神孕育，知识自由地流向寻求它的人。",
+            "正位": "滋养、机遇、自然、创造",
+            "逆位": "破坏、终结、寒冷、停滞",
+            "英文解释": "The Well is the birthplace of ideas, inspiration, and transformation. All things are birthed from this Creatrix and knowledge flows freely to those who seek it",
+            "英文正位": "Nurturing, opportunity, nature, creativity",
+            "英文逆位": "Destruction, endings, cold, stagnant"
+        },
+        {
+            "序号": 24,
+            "塔罗牌名称": "艺术家",
+            "英文名称": "The Artist",
+            "占星对应": "蛇夫座",
+            "解释": "艺术家是创造的容器。这张牌象征人类，当你需要放下人类境况的干扰，静下来去聆听并接受那些可获取的知识时，它便会出现。",
+            "正位": "远见、诠释者、创造、充满激情",
+            "逆位": "不稳定、评判性、躁动、贪婪",
+            "英文解释": "The Artist is the vessel of creation. This card signifies mankind and shows when you need to open to the knowledge that is available if you stop and set aside the distractions of the human condition and listen",
+            "英文正位": "Visionary, interpreter, creation, passionate",
+            "英文逆位": "Unstable, judgemental, restless, greedy"
+        },
+        {
+            "序号": 25,
+            "塔罗牌名称": "圣杯国王",
+            "英文名称": "King of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "平衡、慷慨、力量、克制",
+            "逆位": "不宽容、虐待、情绪化、依赖",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Balance, generosity, strength, restraint",
+            "英文逆位": "Intolerance, abuse, moodiness, dependency"
+        },
+        {
+            "序号": 26,
+            "塔罗牌名称": "圣杯王后",
+            "英文名称": "Queen of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "保护、直觉、潜意识情感、创造力",
+            "逆位": "不安全感、依赖、不诚实、不满",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Protection, intuition, unconscious emotion, creativity",
+            "英文逆位": "Insecurity, dependency, dishonesty, dissatisfaction"
+        },
+        {
+            "序号": 27,
+            "塔罗牌名称": "圣杯骑士",
+            "英文名称": "Knight of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "进展、实现、灵感、疗愈",
+            "逆位": "自夸、嫉妒、失望、利己主义",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Advancement, fulfillment, inspiration, healing",
+            "英文逆位": "Boastfulness, jealousy, disappointment, egotism"
+        },
+        {
+            "序号": 28,
+            "塔罗牌名称": "圣杯侍从",
+            "英文名称": "Page of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "自信、快乐、满足、洞察力",
+            "逆位": "不成熟、不安全感、冷漠、冲动",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Confidence, happiness, contentment, insight",
+            "英文逆位": "Immaturity, insecurity, apathy, impulsiveness"
+        },
+        {
+            "序号": 29,
+            "塔罗牌名称": "圣杯首牌",
+            "英文名称": "Ace of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "同情、纯洁、创造力、开始",
+            "逆位": "压抑的情感、终结、分离、脆弱",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Compassion, purity, creativity, beginnings",
+            "英文逆位": "Repressed emotions, endings, separation, vulnerability"
+        },
+        {
+            "序号": 30,
+            "塔罗牌名称": "圣杯二",
+            "英文名称": "Two of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "健康、伙伴关系、和谐、吸引力",
+            "逆位": "失衡、脱节、不配感、挣扎",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Health, partnership, harmony, attraction",
+            "英文逆位": "Imbalance, disconnection, unworthiness, struggle"
+        },
+        {
+            "序号": 31,
+            "塔罗牌名称": "圣杯三",
+            "英文名称": "Three of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "社群、友谊、创造力、快乐",
+            "逆位": "过度放纵、不忠、创造力受阻、脱节",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Community, friendship, creativity, pleasure",
+            "英文逆位": "Over-indulgence, unfaithfulness, stifled creativity, disconnection"
+        },
+        {
+            "序号": 32,
+            "塔罗牌名称": "圣杯四",
+            "英文名称": "Four of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "冥想、怨恨、冷漠、不满",
+            "逆位": "厌倦、缺乏经验、抑郁、分离",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Meditation, resentment, apathy, discontentment",
+            "英文逆位": "Boredom, inexperience, depression, separation"
+        },
+        {
+            "序号": 33,
+            "塔罗牌名称": "圣杯五",
+            "英文名称": "Five of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "失去、忽视、失败、绝望",
+            "逆位": "接纳、宽恕、怀旧",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Loss, neglect, failure, despair",
+            "英文逆位": "Acceptance, forgiveness, nostalgia"
+        },
+        {
+            "序号": 34,
+            "塔罗牌名称": "圣杯六",
+            "英文名称": "Six of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系.当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "纯真、怀旧、喜悦、重逢",
+            "逆位": "匮乏、天真、虐待、失望",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Innocence, nostalgia, joy, reunion",
+            "英文逆位": "Scarcity, naivete, abuse, disappointment"
+        },
+        {
+            "序号": 35,
+            "塔罗牌名称": "圣杯七",
+            "英文名称": "Seven of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "幻象、想象、不切实际的欲望、可能性",
+            "逆位": "诱惑、犹豫不决、不安全感、不知所措",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Illusion, imagination, unrealistic desires, possibility",
+            "英文逆位": "Temptation, indecision, insecurity, overwhelmed"
+        },
+        {
+            "序号": 36,
+            "塔罗牌名称": "圣杯八",
+            "英文名称": "Eight of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "放弃、旅行、失去兴趣、撤退",
+            "逆位": "绝望、困惑、漂泊、拒绝",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Abandonment, travel, loss of interest, withdrawal",
+            "英文逆位": "Hopelessness, confusion, drifting, rejection"
+        },
+        {
+            "序号": 37,
+            "塔罗牌名称": "圣杯九",
+            "英文名称": "Nine of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "幸福、满足、和谐、成就",
+            "逆位": "贪婪、物质主义、不切实际的期望、自夸",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Happiness, satisfaction, harmony, accomplishment",
+            "英文逆位": "Greed, materialism, unrealistic expectations, boastfulness"
+        },
+        {
+            "序号": 38,
+            "塔罗牌名称": "圣杯十",
+            "英文名称": "Ten of Cups",
+            "占星对应": "巨蟹座、天蝎座、双鱼座",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "丰饶、满足、实现、幸福",
+            "逆位": "关系破裂、忽视、未完成、错位",
+            "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
+            "英文正位": "Abundance, satisfaction, fulfillment, happiness",
+            "英文逆位": "Broken relationship, neglect, incompletion, misalignment"
+        },
+        {
+            "序号": 39,
+            "塔罗牌名称": "星币国王",
+            "英文名称": "King of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "权力、影响力、力量、丰饶",
+            "逆位": "控制、虐待、压制、不稳定",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Power, influence, strength, abundance",
+            "英文逆位": "Control, abuse, suppression, instability"
+        },
+        {
+            "序号": 40,
+            "塔罗牌名称": "星币王后",
+            "英文名称": "Queen of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "繁荣、愉悦、母性、安全感",
+            "逆位": "失衡、隐居、肤浅、殉道感",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Prosperity, pleasure, motherly, security",
+            "英文逆位": "Imbalance, reclusive, superficial, martyrdom"
+        },
+        {
+            "序号": 41,
+            "塔罗牌名称": "星币骑士",
+            "英文名称": "Knight of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "准备充分、高效、雄心勃勃、务实",
+            "逆位": "停滞、懒惰、粗心、怠慢",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Prepared, efficient, ambitious, practical",
+            "英文逆位": "Stagnant, lazy, careless, idle"
+        },
+        {
+            "序号": 42,
+            "塔罗牌名称": "星币侍从",
+            "英文名称": "Page of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "机遇、发现、显化、掌握",
+            "逆位": "无知、不成熟、怨恨、挫折",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Opportunity, discovery, manifestation, mastery",
+            "英文逆位": "Ignorance, immaturity, resentment, frustration"
+        },
+        {
+            "序号": 43,
+            "塔罗牌名称": "星币首牌",
+            "英文名称": "Ace of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "繁荣、稳定、新的开始、丰饶",
+            "逆位": "贪婪、腐败、风险、延迟",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Prosperity, stability, new beginnings, abundance",
+            "英文逆位": "Greed, corruption, risk, delay"
+        },
+        {
+            "序号": 44,
+            "塔罗牌名称": "星币二",
+            "英文名称": "Two of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "平衡、更新、适应性、改变",
+            "逆位": "不负责任、忽视、混乱、不可预测",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Balance, renewal, adaptability, change",
+            "英文逆位": "Irresponsible, neglect, disorganization, unpredictability"
+        },
+        {
+            "序号": 45,
+            "塔罗牌名称": "星币三",
+            "英文名称": "Three of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "成功、协作、解决方案、自信",
+            "逆位": "竞争、不和谐、干涉、停滞",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Success, collaboration, solutions, confidence",
+            "英文逆位": "Competition, disharmony, interference, stagnant"
+        },
+        {
+            "序号": 46,
+            "塔罗牌名称": "星币四",
+            "英文名称": "Four of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "稳定、控制、影响力、安全感",
+            "逆位": "贪婪、损失、物质上的不信任",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Stability, control, influence, security",
+            "英文逆位": "Greed, loss, materialistic mistrust"
+        },
+        {
+            "序号": 47,
+            "塔罗牌名称": "星币五",
+            "英文名称": "Five of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "孤立、贫困、健康欠佳、不安全感",
+            "逆位": "财务恢复、重拾信心、灵性、机遇",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Isolation, poverty, poor health, insecurity",
+            "英文逆位": "Financial recovery, renewed confidence, spirituality, opportunity"
+        },
+        {
+            "序号": 48,
+            "塔罗牌名称": "星币六",
+            "英文名称": "Six of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "慷慨、慈善、同理心、仁慈",
+            "逆位": "自私、贪婪、残酷、评判",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Generosity, charity, empathy, kindness",
+            "英文逆位": "Selfishness, greed, cruelty, judgement"
+        },
+        {
+            "序号": 49,
+            "塔罗牌名称": "星币七",
+            "英文名称": "Seven of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "利润、回报、投资、成长",
+            "逆位": "失败、不信任、失业、重新评估",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Profit, reward, investment, growth",
+            "英文逆位": "Failure, mistrust, unemployment, re-evaluation"
+        },
+        {
+            "序号": 50,
+            "塔罗牌名称": "星币八",
+            "英文名称": "Eight of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "创造力、专注、工艺、重点",
+            "逆位": "完美主义、挫折、挫折感、执念",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Creativity, concentration, craftsmanship, focus",
+            "英文逆位": "Perfectionism, frustration, setbacks, obsession"
+        },
+        {
+            "序号": 51,
+            "塔罗牌名称": "星币九",
+            "英文名称": "Nine of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "奢华、成功、回报、欣赏",
+            "逆位": "物质主义、挫折、损失、过度放纵",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Luxury, success, reward, appreciation",
+            "英文逆位": "Materialism, setbacks, loss, overindulgence"
+        },
+        {
+            "序号": 52,
+            "塔罗牌名称": "星币十",
+            "英文名称": "Ten of Pentacles",
+            "占星对应": "金牛座、处女座、摩羯座",
+            "解释": "星币牌组与生活的物质方面相关：工作、健康、财务、创造性出口和物质财富。它们作为在物质世界中显化之事的镜子。",
+            "正位": "财富、成就、家庭、满足",
+            "逆位": "负担、损失、孤独、评判",
+            "英文解释": "Pentacles: The Suit of Pentacles relates to the physical aspects of life: work, health, finances, creative outlets, and material possessions. They appear as a mirror for what manifests in the physical world.",
+            "英文正位": "Wealth, achievement, family, satisfaction",
+            "英文逆位": "Burden, loss, loneliness, judgement"
+        },
+        {
+            "序号": 53,
+            "塔罗牌名称": "宝剑国王",
+            "英文名称": "King of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "智力、权威、力量、公正",
+            "逆位": "犹豫不决、残酷、虐待、操纵",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Intellect, authority, strength, fairness",
+            "英文逆位": "Indecisive, cruel, abusive, manipulative"
+        },
+        {
+            "序号": 54,
+            "塔罗牌名称": "宝剑王后",
+            "英文名称": "Queen of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "自信、保证、有条理、理智",
+            "逆位": "残酷、冷漠、野心勃勃、情绪化",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Confidence, assurance, organized, intellectual",
+            "英文逆位": "Cruel, distant, ambitious, emotional"
+        },
+        {
+            "序号": 55,
+            "塔罗牌名称": "宝剑骑士",
+            "英文名称": "Knight of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "固执、坚定、鲁莽、盛气凌人",
+            "逆位": "软弱、不可靠、急躁、杂乱无章",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Stubborn, determined, brash, overbearing",
+            "英文逆位": "Weak, unreliable, impatient, disorganized"
+        },
+        {
+            "序号": 56,
+            "塔罗牌名称": "宝剑侍从",
+            "英文名称": "Page of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "深思熟虑、清晰、好奇、躁动",
+            "逆位": "易怒、草率、恼人、怀疑",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Thoughtfulness, clarity, curious, restless",
+            "英文逆位": "Irritable, hasty, annoying, doubt"
+        },
+        {
+            "序号": 57,
+            "塔罗牌名称": "宝剑首牌",
+            "英文名称": "Ace of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "专注、清晰、胜利、灵感",
+            "逆位": "不安全感、困惑、混乱、厌倦",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Focus, clarity, victory, inspiration",
+            "英文逆位": "Insecurity, confusion, chaos, boredom"
+        },
+        {
+            "序号": 58,
+            "塔罗牌名称": "宝剑二",
+            "英文名称": "Two of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "直觉、妥协、犹豫不决、僵局",
+            "逆位": "恐惧、困惑、冲突、不知所措",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Intuition, compromise, indecision, stalemate",
+            "英文逆位": "Fear, confusion, conflict, overwhelmed"
+        },
+        {
+            "序号": 59,
+            "塔罗牌名称": "宝剑三",
+            "英文名称": "Three of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "痛苦、悲伤、欺骗、拒绝",
+            "逆位": "宽恕、恢复、清晰、内省",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Pain, grief, deception, rejection",
+            "英文逆位": "Forgiveness, recovery, clarity, introspection"
+        },
+        {
+            "序号": 60,
+            "塔罗牌名称": "宝剑四",
+            "英文名称": "Four of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "沉思、冥想、放松、休息",
+            "逆位": "怨恨、停滞、精疲力竭、挫折",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Contemplation, meditation, relaxation, rest",
+            "英文逆位": "Resentment, stagnant, exhaustion, frustration"
+        },
+        {
+            "序号": 61,
+            "塔罗牌名称": "宝剑五",
+            "英文名称": "Five of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "自私、紧张、背叛、自以为是",
+            "逆位": "解决、宽恕、理解、重聚",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Selfishness, tension, betrayal, entitlement",
+            "英文逆位": "Resolution, forgiveness, understanding, reunion"
+        },
+        {
+            "序号": 62,
+            "塔罗牌名称": "宝剑六",
+            "英文名称": "Six of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "解决方案、改变、安全感、过渡",
+            "逆位": "延迟、挑战、失衡、拖延",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Solutions, change, security, transition",
+            "英文逆位": "Delay, challenges, unbalanced, procrastination"
+        },
+        {
+            "序号": 63,
+            "塔罗牌名称": "宝剑七",
+            "英文名称": "Seven of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "背叛、逃避、欺骗、不负责任",
+            "逆位": "责任、接纳、挑战、承诺",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Betrayal, escape, deception, irresponsibility",
+            "英文逆位": "Responsibility, acceptance, challenges, commitment"
+        },
+        {
+            "序号": 64,
+            "塔罗牌名称": "宝剑八",
+            "英文名称": "Eight of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "孤立、监禁、失望、受困",
+            "逆位": "释放、接纳、承担责任、发现",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Isolation, imprisonment, disappointment, trapped",
+            "英文逆位": "Release, acceptance, accountability, discovery"
+        },
+        {
+            "序号": 65,
+            "塔罗牌名称": "宝剑九",
+            "英文名称": "Nine of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "抑郁、危机、恐惧、焦虑",
+            "逆位": "客观、知觉、恢复、启示",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Depression, crisis, fear, anxiety",
+            "英文逆位": "Objectivity, perception, recovery, revelation"
+        },
+        {
+            "序号": 66,
+            "塔罗牌名称": "宝剑十",
+            "英文名称": "Ten of Swords",
+            "占星对应": "双子座、天秤座、水瓶座",
+            "解释": "宝剑牌组与权力和冲突有关，但请务必记住宝剑是双刃剑。它们提醒我们善与恶之间只有一线之隔，因此要留心你的思想与野心。",
+            "正位": "背叛、臣服、失败、终结",
+            "逆位": "希望、恢复、接纳、更新",
+            "英文解释": "Swords: The Suit of Swords are associated with power and conflict, but be keen to remember that swords have a double edge. They are reminders that there is a fine line between good and evil, so be mindful of your thoughts and ambitions.",
+            "英文正位": "Betrayal, surrender, defeat, endings",
+            "英文逆位": "Hope, recovery, acceptance, renewal"
+        },
+        {
+            "序号": 67,
+            "塔罗牌名称": "权杖国王",
+            "英文名称": "King of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "影响力、尊重、领袖、成熟",
+            "逆位": "不宽容、冷酷、急躁、冲动",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Influence, respect, leader, maturity",
+            "英文逆位": "Intolerant, ruthless, impatient, impulsive"
+        },
+        {
+            "序号": 68,
+            "塔罗牌名称": "权杖王后",
+            "英文名称": "Queen of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "创造力、成长、直觉、充满激情",
+            "逆位": "冷漠、嫉妒、攻击性、专横",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Creativity, growth, intuition, passionate",
+            "英文逆位": "Cold, jealous, aggressive, domineering"
+        },
+        {
+            "序号": 69,
+            "塔罗牌名称": "权杖骑士",
+            "英文名称": "Knight of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "坚定、精力充沛、冲动、充满激情",
+            "逆位": "愤怒、自负、挫折、悲观",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Determination, energetic, impulsiveness, passionate",
+            "英文逆位": "Anger, ego, frustration, pessimism"
+        },
+        {
+            "序号": 70,
+            "塔罗牌名称": "权杖侍从",
+            "英文名称": "Page of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "热情、旅行、创造力、探索",
+            "逆位": "懒惰、悲观、不专注、傲慢",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Enthusiasm, travel, creativity, exploration",
+            "英文逆位": "Lazy, pessimism, unfocused, arrogance"
+        },
+        {
+            "序号": 71,
+            "塔罗牌名称": "权杖首牌",
+            "英文名称": "Ace of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "灵感、潜能、创造、热情",
+            "逆位": "终结、延迟、缺乏动力、不耐烦",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Inspiration, potential, creation, enthusiasm",
+            "英文逆位": "Endings, delay, unmotivated, impatience"
+        },
+        {
+            "序号": 72,
+            "塔罗牌名称": "权杖二",
+            "英文名称": "Two of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "专注、决策、发现、规划",
+            "逆位": "过度自信、发育不良、犹豫不决、受阻",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Focus, decisions, discovery, planning",
+            "英文逆位": "Overconfidence, stunted, undetermined, blocked"
+        },
+        {
+            "序号": 73,
+            "塔罗牌名称": "权杖三",
+            "英文名称": "Three of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "策略、规划、力量、旅行",
+            "逆位": "延迟、障碍、风险、失望",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Strategy, planning, strength, travel",
+            "英文逆位": "Delay, obstacles, risk, disappointment"
+        },
+        {
+            "序号": 74,
+            "塔罗牌名称": "权杖四",
+            "英文名称": "Four of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "结合、庆祝、承诺、社群",
+            "逆位": "过渡、紧张、改变、不稳定",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Union, celebration, promise, community",
+            "英文逆位": "Transition, tension, change, instability"
+        },
+        {
+            "序号": 75,
+            "塔罗牌名称": "权杖五",
+            "英文名称": "Five of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "冲突、分歧、抵抗、竞争",
+            "逆位": "回避、自我怀疑、逃避、谈判",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Conflict, disagreement, resistance, competition",
+            "英文逆位": "Avoidance, self-doubt, evasion, negotiation"
+        },
+        {
+            "序号": 76,
+            "塔罗牌名称": "权杖六",
+            "英文名称": "Six of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "胜利、自信、英勇、认可",
+            "逆位": "自负、误导、怀疑、忽视",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Victory, confidence, valor, recognition",
+            "英文逆位": "Egotism, misdirection, doubt, neglect"
+        },
+        {
+            "序号": 77,
+            "权杖七": "权杖七",
+            "塔罗牌名称": "权杖七",
+            "英文名称": "Seven of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "挑战、挣扎、防御、辩护",
+            "逆位": "自卑、不知所措、评判、软弱",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Challenge, struggle, defense, justification",
+            "英文逆位": "Inferiority, overwhelmed, judgement, weakness"
+        },
+        {
+            "序号": 78,
+            "塔罗牌名称": "权杖八",
+            "英文名称": "Eight of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "行动、平衡、改变、生产力",
+            "逆位": "挫折、延迟、错误、困惑",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Action, balance, change, productivity",
+            "英文逆位": "Frustration, delay, mistakes, confusion"
+        },
+        {
+            "序号": 79,
+            "塔罗牌名称": "权杖九",
+            "英文名称": "Nine of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "勇气、决心、坚持、希望",
+            "逆位": "失败、防御性、迟疑、多疑",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Courage, determination, persistence, hope",
+            "英文逆位": "Failure, defensive, hesitation, paranoia"
+        },
+        {
+            "序号": 80,
+            "塔罗牌名称": "权杖十",
+            "英文名称": "Ten of Wands",
+            "占星对应": "白羊座、狮子座、射手座",
+            "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
+            "正位": "负担、压力、压迫、成就",
+            "逆位": "解退、简化、回避、不成熟",
+            "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
+            "英文正位": "Burden, stress, oppression, accomplishment",
+            "英文逆位": "Relief, simplification, avoidance, immaturity"
+        }
+    ];
+
+    // 【安全卫士逻辑】如果你的 80 张牌还没完全录入完毕，这里会自动为缺失的 ID 补上标准占位，防止网页加载报错崩溃
+    for (let i = 1; i <= 80; i++) {
+        const exists = tarotDatabase.some(c => getCardField(c, 'id') == i);
+        if (!exists) {
+            let type = i <= 24 ? "major" : "minor";
+            let suite_cn = "";
+            if (i > 24 && i <= 38) suite_cn = "圣杯";
+            else if (i > 38 && i <= 52) suite_cn = "星币";
+            else if (i > 52 && i <= 66) suite_cn = "宝剑";
+            else if (i > 66 && i <= 80) suite_cn = "权杖";
+
+            tarotDatabase.push({
+                "序号": i,
+                "塔罗牌名称": type === "major" ? `大阿卡纳 [${i}]` : `${suite_cn} [${i}]`,
+                "英文名称": type === "major" ? `Major Arcana [${i}]` : `Minor [${i}]`,
+                "占星对应": "未关联",
+                "解释": `这是第 ${i} 张卡牌的详细牌义解释占位符。`,
+                "正位": "积极发展、和谐顺利、状态平稳",
+                "逆位": "阻碍重重、需要反思、失衡状态"
+            });
+        }
+    }
+
+    // 重新按 ID 升序排序
+    tarotDatabase.sort((a, b) => getCardField(a, 'id') - getCardField(b, 'id'));
+
+
+    /* ==========================================
+       5.2 智能字段适配器 (抹平中英文 Key 值差异)
+       ========================================== */
+    function getCardField(card, fieldType) {
+        if (!card) return "";
+        switch (fieldType) {
+            case 'id':
+                return card.序号 || card.id || card.index || "";
+            case 'name':
+                return card.塔罗牌名称 || card.name_cn || card.名称 || card.name || "";
+            case 'name_en':
+                return card.英文名称 || card.name_en || card.english_name || "";
+            case 'astrology':
+                return card.占星对应 || card.astrology || card.占星 || "";
+            case 'desc':
+                return card.解释 || card.desc_cn || card.desc || card.explanation || "";
+            case 'desc_en':
+                return card.英文解释 || card.desc_en || "";
+            case 'upright':
+                return card.正位 || card.upright_cn || card.upright || "";
+            case 'upright_en':
+                return card.英文正位 || card.upright_en || "";
+            case 'reversed':
+                return card.逆位 || card.reversed_cn || card.reversed || "";
+            case 'reversed_en':
+                return card.英文逆位 || card.reversed_en || "";
+            default:
+                return "";
+        }
+    }
+
+
+    /* ==========================================
+       5.3 全局控制状态
+       ========================================== */
+    let selectCount = 3; 
+    let currentPoolRange = { min: 1, max: 80 };
+    let shuffledDeck = [];
+    let drawnIndices = []; 
+    let drawnResult = [];  
+
+    // 视频复用导航函数
+    function navigate(pageId, activeVideoId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        const targetPage = document.getElementById(pageId);
+        targetPage.classList.add('active');
+
+        document.querySelectorAll('.video-bg').forEach(v => {
+            if (v.id === activeVideoId) {
+                v.classList.add('active');
+                v.play().catch(()=>{});
+            } else {
+                v.classList.remove('active');
+                v.pause();
+            }
+        });
+    }
+
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.innerText = message;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2500);
+    }
+
+    /* ==========================================
+       5.4 首页与 A1 选择逻辑
+       ========================================== */
+    function backToHome() {
+        navigate('page-home', 'bg-video-home');
+    }
+
+    function goToA1() {
+        navigate('page-a1', 'bg-video-a1-a2');
+        document.getElementById('chk-major').checked = true;
+        document.getElementById('chk-minor').checked = true;
+        validateCheckboxes();
+    }
+
+    function validateCheckboxes() {
+        const major = document.getElementById('chk-major').checked;
+        const minor = document.getElementById('chk-minor').checked;
+        if (!major && !minor) {
+            document.getElementById('chk-major').checked = true;
+            showToast("必须至少勾选一种牌组哦！咪~");
+        }
+    }
+
+    function toggleCustomInput() {
+        const wrap = document.getElementById('custom-input-wrap');
+        wrap.classList.toggle('active');
+    }
+
+    function setCardCount(count) {
+        selectCount = count;
+        proceedToA2();
+    }
+
+    function confirmCustomCount() {
+        const input = document.getElementById('custom-count');
+        const count = parseInt(input.value);
+        if (isNaN(count) || count < 1 || count > 10) {
+            showToast("请输入1到10之间的整数哦");
+            return;
+        }
+        selectCount = count;
+        proceedToA2();
+    }
+
+    function proceedToA2() {
+        navigate('page-a2', 'bg-video-a1-a2');
+    }
+
+    /* ==========================================
+       5.5 A2 到 A3 (3D 洗牌动画过渡)
+       ========================================== */
+    function startShuffleTransition() {
+        const major = document.getElementById('chk-major').checked;
+        const minor = document.getElementById('chk-minor').checked;
+
+        if (major && minor) {
+            currentPoolRange = { min: 1, max: 80 };
+        } else if (major) {
+            currentPoolRange = { min: 1, max: 24 };
+        } else {
+            currentPoolRange = { min: 25, max: 80 };
+        }
+
+        const overlay = document.getElementById('shuffle-overlay');
+        const deck = document.getElementById('shuffle-deck');
+        overlay.classList.add('active');
+        deck.classList.add('shuffling');
+
+        generateShuffledDeck();
+
+        setTimeout(() => {
+            deck.classList.remove('shuffling');
+            overlay.classList.remove('active');
+            setupA3Page();
+            navigate('page-a3', 'bg-video-a3-a4');
+        }, 2000);
+    }
+
+    function generateShuffledDeck() {
+        const pool = [];
+        for (let i = currentPoolRange.min; i <= currentPoolRange.max; i++) {
+            pool.push(i);
+        }
+        
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+
+        shuffledDeck = pool.map(id => {
+            const orientation = Math.random() < 0.5 ? 1 : -1;
+            return id * orientation;
+        });
+    }
+
+    /* ==========================================
+       5.6 A3 核心抽牌交互
+       ========================================== */
+    function setupA3Page() {
+        drawnIndices = [];
+        drawnResult = [];
+        
+        document.getElementById('drawn-count').innerText = "0";
+        document.getElementById('pending-count').innerText = selectCount;
+        document.getElementById('drawn-cards-container').innerHTML = "";
+        document.getElementById('btn-view-meaning').classList.add('disabled');
+
+        const promptEl = document.getElementById('input-prompt-text');
+        const rangeMax = currentPoolRange.max - currentPoolRange.min + 1;
+        promptEl.innerText = `请输入1-${rangeMax}之间的数字`;
+
+        const input = document.getElementById('card-input');
+        input.value = "";
+        input.disabled = false;
+        input.focus();
+    }
+
+    document.getElementById('card-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            processDrawInput();
+        }
+    });
+
+    function processDrawInput() {
+        const inputEl = document.getElementById('card-input');
+        const val = parseInt(inputEl.value);
+        const rangeMax = currentPoolRange.max - currentPoolRange.min + 1;
+
+        if (isNaN(val) || val < 1 || val > rangeMax) {
+            showToast(`请输入 1-${rangeMax} 之间的数字`);
+            return;
+        }
+        if (drawnIndices.includes(val)) {
+            showToast("该数字已抽过，请换一个");
+            return;
+        }
+
+        drawnIndices.push(val);
+        inputEl.value = "";
+
+        // 方案 A 底层索引分配
+        const rawVal = shuffledDeck[val - 1]; 
+        const isReversed = rawVal < 0;
+        const cardId = Math.abs(rawVal);
+        const cardData = tarotDatabase.find(c => getCardField(c, 'id') == cardId);
+
+        drawnResult.push({
+            inputIndex: val,
+            card: cardData,
+            isReversed: isReversed
+        });
+
+        createA3CardUI(drawnResult.length - 1);
+
+        const drawnNum = drawnResult.length;
+        document.getElementById('drawn-count').innerText = drawnNum;
+        document.getElementById('pending-count').innerText = selectCount - drawnNum;
+
+        if (drawnNum >= selectCount) {
+            inputEl.disabled = true;
+            checkViewMeaningButtonState();
+        }
+    }
+
+    function createA3CardUI(resultIndex) {
+        const res = drawnResult[resultIndex];
+        const container = document.getElementById('drawn-cards-container');
+        const cardId = getCardField(res.card, 'id');
+        const cardName = getCardField(res.card, 'name');
+        const imgPath = res.card.img || `assets/img/cards/${cardId}.webp`;
+
+        const cardHtml = `
+            <div class="card-container" id="a3-card-${resultIndex}" onclick="flipCard(${resultIndex})">
+                <div class="card-inner">
+                    <div class="card-back">
+                        <img src="assets/img/card_back.webp" alt="背面">
+                    </div>
+                    <div class="card-front ${res.isReversed ? 'reversed' : ''}">
+                        <img src="${imgPath}" alt="${cardName}" loading="lazy">
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', cardHtml);
+    }
+
+    function flipCard(idx) {
+        const cardEl = document.getElementById(`a3-card-${idx}`);
+        if (!cardEl.classList.contains('flipped')) {
+            cardEl.classList.add('flipped');
+            drawnResult[idx].isFlipped = true;
+            checkViewMeaningButtonState();
+        }
+    }
+
+    function checkViewMeaningButtonState() {
+        const allDrawn = drawnResult.length >= selectCount;
+        if (allDrawn) {
+            document.getElementById('btn-view-meaning').classList.remove('disabled');
+        } else {
+            document.getElementById('btn-view-meaning').classList.add('disabled');
+        }
+    }
+
+    /* ==========================================
+       5.7 A4 结果渲染 (已修正！完美调用表格中的解释、正位、逆位)
+       ========================================== */
+    function goToA4() {
+        navigate('page-a4', 'bg-video-a3-a4');
+        const listContainer = document.getElementById('results-list');
+        listContainer.innerHTML = "";
+
+        drawnResult.forEach((res, index) => {
+            const orientationText = res.isReversed ? "逆位" : "正位";
+            const card = res.card;
+            
+            const cardId = getCardField(card, 'id');
+            const name_cn = getCardField(card, 'name');
+            const name_en = getCardField(card, 'name_en');
+            const descText = getCardField(card, 'desc'); // 正确调用：解释
+            const posText = res.isReversed ? `逆位：${getCardField(card, 'reversed')}` : `正位：${getCardField(card, 'upright')}`;
+            const imgPath = card.img || `assets/img/cards/${cardId}.webp`;
+
+            const itemHtml = `
+                <div class="result-item">
+                    <div class="result-img-container ${res.isReversed ? 'reversed' : ''}">
+                        <img src="${imgPath}" alt="${name_cn}">
+                    </div>
+                    <div class="glass-card result-detail">
+                        <div class="result-title">第 ${index + 1} 张：${name_cn} ${name_en ? '(' + name_en + ')' : ''} - ${orientationText}</div>
+                        <div class="result-desc">
+                            <p style="margin-bottom:8px; line-height: 1.6;">${descText}</p>
+                            <p style="color:#ff9dff; font-weight:bold;">${posText}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            listContainer.insertAdjacentHTML('beforeend', itemHtml);
+        });
+    }
+
+    function copyAllA4Meaning() {
+        let copyText = "🔮 我的「咪的天」占卜结果 🔮\n\n";
+        drawnResult.forEach((res, index) => {
+            const ori = res.isReversed ? "逆位" : "正位";
+            const card = res.card;
+            const name_cn = getCardField(card, 'name');
+            const name_en = getCardField(card, 'name_en');
+            const desc = getCardField(card, 'desc');
+            const upright = getCardField(card, 'upright');
+            const reversed = getCardField(card, 'reversed');
+
+            copyText += `第 ${index + 1} 张：${name_cn} ${name_en ? '(' + name_en + ')' : ''} - ${ori}\n`;
+            copyText += `${desc}\n`;
+            if (res.isReversed) {
+                copyText += `逆位：${reversed}\n\n`;
+            } else {
+                copyText += `正位：${upright}\n\n`;
+            }
+        });
+
+        navigator.clipboard.writeText(copyText).then(() => {
+            showToast("牌义已全部复制到剪切板咪~");
+        }).catch(() => {
+            showToast("复制失败，请重试");
+        });
+    }
+
+    /* ==========================================
+       5.8 B1 牌义字典列表
+       ========================================== */
+    let dictionaryInited = false;
+    const itemsPerPage = 9; 
+    const pageStates = {
+        major: { loaded: 0, data: [] },
+        cups: { loaded: 0, data: [] },
+        pentacles: { loaded: 0, data: [] },
+        swords: { loaded: 0, data: [] },
+        wands: { loaded: 0, data: [] }
+    };
+
+    function goToB1() {
+        navigate('page-b1', 'bg-video-b');
+        if (!dictionaryInited) {
+            initDictionaryData();
+            dictionaryInited = true;
+        }
+    }
+
+    function initDictionaryData() {
+        pageStates.major.data = tarotDatabase.filter(c => getCardField(c, 'id') <= 24);
+        pageStates.cups.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id >= 25 && id <= 38; });
+        pageStates.pentacles.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id >= 39 && id <= 52; });
+        pageStates.swords.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id >= 53 && id <= 66; });
+        pageStates.wands.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id >= 67 && id <= 80; });
+
+        loadNextPage('major');
+        loadNextPage('cups');
+        loadNextPage('pentacles');
+        loadNextPage('swords');
+        loadNextPage('wands');
+
+        const swiper = document.getElementById('b1-swiper');
+        swiper.addEventListener('scroll', updateActiveEmoji);
+
+        setupScrollLoad('slide-major', 'major');
+        setupScrollLoad('slide-cups', 'cups');
+        setupScrollLoad('slide-pentacles', 'pentacles');
+        setupScrollLoad('slide-swords', 'swords');
+        setupScrollLoad('slide-wands', 'wands');
+    }
+
+    function loadNextPage(category) {
+        const state = pageStates[category];
+        if (state.loaded >= state.data.length) return;
+
+        const nextBatch = state.data.slice(state.loaded, state.loaded + itemsPerPage);
+        const grid = document.getElementById(`grid-${category}`);
+
+        nextBatch.forEach(card => {
+            const id = getCardField(card, 'id');
+            const name = getCardField(card, 'name');
+            const imgPath = card.img || `assets/img/cards/${id}.webp`;
+            
+            const itemHtml = `
+                <div class="grid-item" onclick="viewCardDetail(${id})">
+                    <div class="grid-img-wrap">
+                        <img src="${imgPath}" loading="lazy" alt="${name}">
+                    </div>
+                    <span>${id}.${name}</span>
+                </div>
+            `;
+            grid.insertAdjacentHTML('beforeend', itemHtml);
+        });
+
+        state.loaded += nextBatch.length;
+    }
+
+    function setupScrollLoad(elementId, category) {
+        const el = document.getElementById(elementId);
+        el.addEventListener('scroll', () => {
+            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) {
+                loadNextPage(category);
+            }
+        });
+    }
+
+    function scrollToSlide(index) {
+        const swiper = document.getElementById('b1-swiper');
+        const slides = swiper.querySelectorAll('.b1-slide');
+        slides[index].scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function updateActiveEmoji() {
+        const swiper = document.getElementById('b1-swiper');
+        const scrollLeft = swiper.scrollLeft;
+        const width = swiper.clientWidth;
+        const activeIndex = Math.round(scrollLeft / width);
+
+        const emojis = document.querySelectorAll('.emoji-item');
+        emojis.forEach((em, idx) => {
+            if (idx === activeIndex) {
+                em.classList.add('active');
+            } else {
+                em.classList.remove('active');
+            }
+        });
+    }
+
+    /* ==========================================
+       5.9 B2 详情显示 (已修正！完美调用表格中的解释、正位、逆位)
+       ========================================== */
+    let activeDetailCard = null;
+
+    function viewCardDetail(id) {
+        const card = tarotDatabase.find(c => getCardField(c, 'id') == id);
+        activeDetailCard = card;
+
+        document.getElementById('b2-card-img').src = card.img || `assets/img/cards/${id}.webp`;
+        
+        const name_cn = getCardField(card, 'name');
+        const name_en = getCardField(card, 'name_en');
+        const astrology = getCardField(card, 'astrology');
+        
+        document.getElementById('b2-card-title').innerText = `${id}. ${name_cn} ${name_en ? '(' + name_en + ')' : ''}`;
+
+        const detailEl = document.getElementById('b2-detail-content');
+        
+        // 只有在数据中配置了占星对应才显示此段
+        let astroHtml = astrology && astrology !== "未关联" ? `<div class="b2-section-title">占星对应</div><p>${astrology}</p>` : '';
+        
+        detailEl.innerHTML = `
+            ${astroHtml}
+            <div class="b2-section-title">牌义释义</div>
+            <p style="line-height: 1.6; margin-bottom: 12px;">${getCardField(card, 'desc')}</p>
+            <div class="b2-section-title">正位</div>
+            <p style="line-height: 1.6; margin-bottom: 12px;">${getCardField(card, 'upright')}</p>
+            <div class="b2-section-title">逆位</div>
+            <p style="line-height: 1.6;">${getCardField(card, 'reversed')}</p>
+        `;
+
+        navigate('page-b2', 'bg-video-b');
+    }
+
+    function copySingleB2Meaning() {
+        if (!activeDetailCard) return;
+        const c = activeDetailCard;
+        
+        const name_cn = getCardField(c, 'name');
+        const name_en = getCardField(c, 'name_en');
+        const id = getCardField(c, 'id');
+        const desc_cn = getCardField(c, 'desc');
+        const desc_en = getCardField(c, 'desc_en');
+        const upright_cn = getCardField(c, 'upright');
+        const upright_en = getCardField(c, 'upright_en');
+        const reversed_cn = getCardField(c, 'reversed');
+        const reversed_en = getCardField(c, 'reversed_en');
+        
+        const copyText = 
+`${id}.${name_cn}${name_en ? '(' + name_en + ')' : ''}
+${desc_cn}
+正位：${upright_cn}
+逆位：${reversed_cn}
+
+${id}.${name_en || ''}
+${desc_en || ''}
+Upright: ${upright_en || ''}
+Reversed: ${reversed_en || ''}`;
+
+        navigator.clipboard.writeText(copyText).then(() => {
+            showToast("中英牌义已完整复制到剪切板咪~");
+        }).catch(() => {
+            showToast("复制失败");
+        });
+    }
+</script>
+</body>
+</html>
