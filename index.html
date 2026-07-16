@@ -156,7 +156,7 @@
             width: 80%;
         }
 
-        /* 2.2 A1 页面 - 修改：将内容整体放置在下半屏 */
+        /* 2.2 A1 页面 */
         #page-a1 {
             justify-content: flex-end;
             align-items: center;
@@ -219,7 +219,7 @@
             margin-right: 10px;
         }
 
-        /* 2.3 A2 页面 - 修改：将内容整体放置在下半屏 */
+        /* 2.3 A2 页面 */
         #page-a2 {
             justify-content: flex-end;
             align-items: center;
@@ -430,7 +430,7 @@
             color: #e0e0ff;
         }
 
-        /* A4 底部栏 - 修改：移除了黑背景框和顶部边框 */
+        /* A4 底部栏 */
         .a4-footer {
             position: fixed;
             bottom: 0;
@@ -491,7 +491,7 @@
             gap: 14px;
         }
 
-        .emoji-nav   .emoji-item {
+        .emoji-nav .emoji-item {
             font-size: 20px;
             cursor: pointer;
             opacity: 0.5;
@@ -512,11 +512,11 @@
             overflow-x: auto;
             scroll-snap-type: x mandatory;
             scroll-behavior: smooth;
-            scrollbar-width: none; /* Hide scrollbar for Firefox */
+            scrollbar-width: none;
         }
 
         .b1-swiper-container::-webkit-scrollbar {
-            display: none; /* Hide scrollbar for Chrome/Safari */
+            display: none;
         }
 
         .b1-slide {
@@ -566,7 +566,7 @@
             width: 100%;
         }
 
-        /* 2.7 B2 页面 */
+        /* 2.7 B2 页面 - 完美修改：去除高宽裁剪限制，展示100%卡牌原图 */
         #page-b2 {
             padding-top: 80px;
             justify-content: flex-start;
@@ -576,7 +576,6 @@
         .b2-img-container {
             width: 50%;
             max-width: 220px;
-            aspect-ratio: 9/16;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: var(--shadow);
@@ -585,8 +584,8 @@
 
         .b2-img-container img {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            height: auto;
+            display: block;
         }
 
         .b2-card-title {
@@ -613,7 +612,7 @@
             padding-left: 8px;
         }
 
-        /* B2 底部栏 - 修改：移除了黑背景框和顶部边框 */
+        /* B2 底部栏 */
         .b2-footer {
             position: fixed;
             bottom: 0;
@@ -763,7 +762,6 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
         }
 
-        /* 叠放位置微调 */
         .anim-stack-card:nth-child(1) { transform: rotate(-10deg) translateX(-30px); }
         .anim-stack-card:nth-child(2) { transform: rotate(-5deg) translateX(-15px); }
         .anim-stack-card:nth-child(3) { transform: rotate(0deg); }
@@ -798,7 +796,6 @@
                 box-shadow: 0 15px 30px rgba(0,0,0,0.7);
             }
             100% {
-                /* 降落在中下部（12vh），并放大 1.8 倍 */
                 transform: scale(1.8) translateY(12vh) rotate(360deg);
                 opacity: 1;
                 box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9);
@@ -843,7 +840,7 @@
 <body>
 
     <div class="app-container">
-        <!-- 背景视频层 (复用机制) -->
+        <!-- 背景视频层 -->
         <video id="bg-video-home" class="video-bg active" loop muted playsinline poster="assets/img/first_frame/home_first.webp">
             <source src="assets/video/home_bg.mp4" type="video/mp4">
         </video>
@@ -861,11 +858,21 @@
            4. 页面结构 (DOM)
            ========================================== -->
 
-        <!-- 首页 -->
+        <!-- 首页 - 完美修改：增加了下半屏高保真预加载进度条，且初始按钮禁用 -->
         <div id="page-home" class="page active">
             <div class="home-buttons">
-                <button class="btn glass-card" onclick="goToA1()">开始占卜</button>
-                <button class="btn glass-card" onclick="goToB1()">查看牌义</button>
+                <!-- 高质量毛玻璃预加载条 -->
+                <div id="preload-container" style="width: 100%; margin-bottom: 24px; text-align: center;">
+                    <div id="preload-text" style="font-size: 14px; margin-bottom: 8px; color: #ff9dff; font-weight: bold;">
+                        正在唤醒猫咪魔力... 0% (0.0MB / 21.5MB)
+                    </div>
+                    <div style="width: 100%; height: 10px; background: rgba(255, 255, 255, 0.08); border-radius: 5px; overflow: hidden; border: 1px solid var(--glass-border);">
+                        <div id="preload-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff9dff, #8b5cf6); transition: width 0.1s ease-out; border-radius: 5px;"></div>
+                    </div>
+                </div>
+
+                <button id="btn-start-divination" class="btn glass-card disabled" onclick="goToA1()">开始占卜</button>
+                <button id="btn-view-meanings" class="btn glass-card disabled" onclick="goToB1()">查看牌义</button>
             </div>
         </div>
 
@@ -993,7 +1000,7 @@
             </div>
         </div>
 
-        <!-- 新增：飞牌动画层（过场动画） -->
+        <!-- 飞牌动画层 -->
         <div id="draw-anim-overlay" class="draw-anim-overlay">
             <div class="anim-scene">
                 <div class="anim-stack">
@@ -1013,7 +1020,7 @@
 
     <!-- ==========================================
        5. 魔法逻辑系统 (JavaScript)
-       ========================================== -->
+       ========================================== */ -->
    <script>
     /* ==========================================
        5.1 塔罗牌万能适配数据库 (支持中英文自定义列名)
@@ -1084,7 +1091,7 @@
             "塔罗牌名称": "教皇",
             "英文名称": "The Hierophant",
             "占星对应": "金牛座",
-            "解释": "教皇是体制的物质化身。他在正式、严谨的体系内解读并传播秘密知识。当你寻求知识时，他将引导你通过既定的教育结构和传统去发现真理。",
+            "解释": "教皇是体制的物质化身。他在正式、严谨的体系内解读并传播秘密知识。当你寻求知识时，他将引导你通过既定的教育结构 and 传统去发现真理。",
             "正位": "传统、指引、灵性、正统、体制",
             "逆位": "伪善、反叛、腐败、不服从",
             "英文解释": "The Hierophant is the physical embodiment of institution. He interprets secret knowledge to share within a formal, rigid system. When seeking knowledge, he will guide you to discovery through established educational structures and traditions",
@@ -1180,7 +1187,7 @@
             "塔罗牌名称": "死神",
             "英文名称": "Death",
             "占星对应": "天蝎座",
-            "解释": "死神是转化的先驱。他提醒你必须摆脱陈旧与熟悉的事物，才能成为崭新的自我。你必须打破旧习，释放那些阻碍你的东西，为更伟大的事物腾出空间。",
+            "解释": "死神是转化的先驱。他提醒你必须摆脱陈旧与熟悉的事物，才能成为崭新的自我。你必须打破旧习惯，释放那些阻碍你的东西，为更伟大的事物腾出空间。",
             "正位": "改变、终结、开始、过渡",
             "逆位": "抗拒、停滞、固着、执念",
             "英文解释": "Death is the harbinger of transformation. He is a reminder that you must shed what is old and familiar to become something new. You must break old habits and release that which is hindering you to make room for something greater",
@@ -1420,8 +1427,8 @@
             "塔罗牌名称": "圣杯六",
             "英文名称": "Six of Cups",
             "占星对应": "巨蟹座、天蝎座、双鱼座",
-            "解释": "圣杯牌组深入探讨你的情感状态与人际关系.当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
-            "正位": "纯真、怀旧、喜阅、重逢",
+            "解释": "圣杯牌组深入探讨你的情感状态与人际关系。当你在做决定时需要关注自己的直觉，这个牌组就会出现。",
+            "正位": "纯真、怀旧、喜悦、重逢",
             "逆位": "匮乏、天真、虐待、失望",
             "英文解释": "Cups: The Suit of Cups delves into your emotional state and relationships. The suit appears when you need to pay attention to your own intuition when making decisions.",
             "英文正位": "Innocence, nostalgia, joy, reunion",
@@ -1830,7 +1837,7 @@
             "占星对应": "白羊座、狮子座、射手座",
             "解释": "权杖牌组映射你的意识，并深入洞察你的核心——即在生活中出现的各种状况下采取行动。",
             "正位": "创造力、成长、直觉、充满激情",
-            "逆位": "冷漠、嫉妒、攻击性、专横",
+            "逆位": "冷漠、嫉烟、攻击性、专横",
             "英文解释": "Wands: The Suit of Wands mirror your consciousness and gives insight into the core of what you are--both to take action in situations that arise in your life.",
             "英文正位": "Creativity, growth, intuition, passionate",
             "英文逆位": "Cold, jealous, aggressive, domineering"
@@ -2171,7 +2178,7 @@
     }
 
     /* ==========================================
-       5.6 A3 核心抽牌交互（深度改进性能与过场）
+       5.6 A3 核心抽牌交互
        ========================================== */
     function setupA3Page() {
         drawnIndices = [];
@@ -2198,7 +2205,6 @@
         }
     });
 
-    // 核心修改：在按下确认瞬间立即加载图片并播放飞卡过场
     function processDrawInput() {
         const inputEl = document.getElementById('card-input');
         const val = parseInt(inputEl.value);
@@ -2213,13 +2219,10 @@
             return;
         }
 
-        // 暂时锁定输入框，防止动画期间误操作
         inputEl.disabled = true;
-
         drawnIndices.push(val);
         inputEl.value = "";
 
-        // 方案 A 底层索引分配
         const rawVal = shuffledDeck[val - 1]; 
         const isReversed = rawVal < 0;
         const cardId = Math.abs(rawVal);
@@ -2232,14 +2235,12 @@
             isFlipped: false
         });
 
-        // 优化：在用户按下确认的瞬间开始预加载卡牌正面图片（进入浏览器缓存）
+        // 异步预加载抽到的卡牌大图
         const imgPath = cardData.img || `assets/img/cards/${cardId}.jpg`;
         const preloader = new Image();
         preloader.src = imgPath;
 
-        // 触发飞卡动画
         playFlyingCardAnimation(() => {
-            // 动画完成后：渲染卡牌到界面中
             createA3CardUI(drawnResult.length - 1);
 
             const drawnNum = drawnResult.length;
@@ -2250,27 +2251,21 @@
                 inputEl.disabled = true;
                 checkViewMeaningButtonState();
             } else {
-                // 如果还需要继续抽牌，恢复输入框并自动聚焦
                 inputEl.disabled = false;
                 inputEl.focus();
             }
         });
     }
 
-    // 执行纯代码过场飞卡动画
     function playFlyingCardAnimation(callback) {
         const animOverlay = document.getElementById('draw-anim-overlay');
         const flyingCard = document.getElementById('flying-card');
 
-        // 显示叠加动画层
         animOverlay.classList.add('active');
-
-        // 重置并触发 CSS 3D 飞卡动画
         flyingCard.classList.remove('animate');
-        void flyingCard.offsetWidth; // 触发回流重绘
+        void flyingCard.offsetWidth; // 触发回流
         flyingCard.classList.add('animate');
 
-        // 动画时长 1.2秒 后隐藏动画层，执行实际的页面卡牌生成逻辑
         setTimeout(() => {
             animOverlay.classList.remove('active');
             flyingCard.classList.remove('animate');
@@ -2278,7 +2273,6 @@
         }, 1200);
     }
 
-    // 去掉了 loading="lazy" 属性，结合提前预加载，保证瞬间展现无卡顿
     function createA3CardUI(resultIndex) {
         const res = drawnResult[resultIndex];
         const container = document.getElementById('drawn-cards-container');
@@ -2301,9 +2295,14 @@
         container.insertAdjacentHTML('beforeend', cardHtml);
     }
 
+    /* ==========================================
+       5.7 完美补全：后续核心交互逻辑
+       ========================================== */
     function flipCard(idx) {
         const cardEl = document.getElementById(`a3-card-${idx}`);
-        if (!cardEl.classList.contains('flipped')) {
+        if (!cardEl) return;
+        
+        if (!drawnResult[idx].isFlipped) {
             cardEl.classList.add('flipped');
             drawnResult[idx].isFlipped = true;
             checkViewMeaningButtonState();
@@ -2311,194 +2310,283 @@
     }
 
     function checkViewMeaningButtonState() {
-        const allDrawn = drawnResult.length >= selectCount;
-        if (allDrawn) {
-            document.getElementById('btn-view-meaning').classList.remove('disabled');
+        const btn = document.getElementById('btn-view-meaning');
+        const allFlipped = (drawnResult.length === selectCount) && drawnResult.every(r => r.isFlipped);
+        if (allFlipped) {
+            btn.classList.remove('disabled');
         } else {
-            document.getElementById('btn-view-meaning').classList.add('disabled');
+            btn.classList.add('disabled');
         }
     }
 
-    /* ==========================================
-       5.7 A4 结果渲染
-       ========================================== */
+    // A4 页面渲染
     function goToA4() {
-        navigate('page-a4', 'bg-video-a3-a4');
         const listContainer = document.getElementById('results-list');
         listContainer.innerHTML = "";
-
+        
         drawnResult.forEach((res, index) => {
-            const orientationText = res.isReversed ? "逆位" : "正位";
             const card = res.card;
-            
             const cardId = getCardField(card, 'id');
-            const name_cn = getCardField(card, 'name');
-            const name_en = getCardField(card, 'name_en');
-            const descText = getCardField(card, 'desc');
-            const posText = res.isReversed ? `逆位：${getCardField(card, 'reversed')}` : `正位：${getCardField(card, 'upright')}`;
+            const cardName = getCardField(card, 'name');
+            const cardEn = getCardField(card, 'name_en');
+            const astrology = getCardField(card, 'astrology');
+            const direction = res.isReversed ? "逆位" : "正位";
+            const keywords = res.isReversed ? getCardField(card, 'reversed') : getCardField(card, 'upright');
+            const desc = getCardField(card, 'desc');
             const imgPath = card.img || `assets/img/cards/${cardId}.jpg`;
-
+            
             const itemHtml = `
-                <div class="result-item">
+                <div class="glass-card result-item">
                     <div class="result-img-container ${res.isReversed ? 'reversed' : ''}">
-                        <img src="${imgPath}" alt="${name_cn}">
+                        <img src="${imgPath}" alt="${cardName}">
                     </div>
-                    <div class="glass-card result-detail">
-                        <div class="result-title">第 ${index + 1} 张：${name_cn} ${name_en ? '(' + name_en + ')' : ''} - ${orientationText}</div>
-                        <div class="result-desc">
-                            <p style="margin-bottom:8px; line-height: 1.6;">${descText}</p>
-                            <p style="color:#ff9dff; font-weight:bold;">${posText}</p>
-                        </div>
+                    <div class="result-detail">
+                        <div class="result-title">${index + 1}. ${cardName} (${cardEn}) · ${direction}</div>
+                        <div class="result-desc" style="margin-bottom: 8px;"><strong>对应：</strong>${astrology}</div>
+                        <div class="result-desc" style="margin-bottom: 8px;"><strong>关键词：</strong>${keywords}</div>
+                        <div class="result-desc"><strong>牌意：</strong>${desc}</div>
                     </div>
                 </div>
             `;
             listContainer.insertAdjacentHTML('beforeend', itemHtml);
         });
+        
+        navigate('page-a4', 'bg-video-a3-a4');
     }
 
+    // 复制 A4 全套牌意到剪贴板
     function copyAllA4Meaning() {
-        let copyText = "🔮 我的「咪的天」占卜结果 🔮\n\n";
+        let text = "✨ 咪的天 - MeowTarot 占卜结果 ✨\n\n";
         drawnResult.forEach((res, index) => {
-            const ori = res.isReversed ? "逆位" : "正位";
-            const card = res.card;
-            const name_cn = getCardField(card, 'name');
-            const name_en = getCardField(card, 'name_en');
-            const desc = getCardField(card, 'desc');
-            const upright = getCardField(card, 'upright');
-            const reversed = getCardField(card, 'reversed');
-
-            copyText += `第 ${index + 1} 张：${name_cn} ${name_en ? '(' + name_en + ')' : ''} - ${ori}\n`;
-            copyText += `${desc}\n`;
-            if (res.isReversed) {
-                copyText += `逆位：${reversed}\n\n`;
-            } else {
-                copyText += `正位：${upright}\n\n`;
-            }
+            const cardName = getCardField(res.card, 'name');
+            const direction = res.isReversed ? "逆位" : "正位";
+            const keywords = res.isReversed ? getCardField(res.card, 'reversed') : getCardField(res.card, 'upright');
+            const desc = getCardField(res.card, 'desc');
+            text += `${index + 1}. 【${cardName}】· ${direction}\n`;
+            text += `关键词：${keywords}\n`;
+            text += `牌意解释：${desc}\n\n`;
         });
-
-        navigator.clipboard.writeText(copyText).then(() => {
-            showToast("牌义已全部复制到剪切板咪~");
+        text += "愿星辰指引你的道路。✨";
+        
+        navigator.clipboard.writeText(text).then(() => {
+            showToast("牌义已成功复制到剪贴板！");
         }).catch(() => {
-            showToast("复制失败，请重试");
+            showToast("复制失败，请手动选择复制");
         });
     }
 
     /* ==========================================
-       5.8 B1 牌义字典列表 (补全缺失函数)
+       5.8 B1/B2 浏览逻辑与无缝 Swiper 滑动
        ========================================== */
-    let dictionaryInited = false;
-    const pageStates = {
-        major: { loaded: 0, data: [] },
-        cups: { loaded: 0, data: [] },
-        pentacles: { loaded: 0, data: [] },
-        swords: { loaded: 0, data: [] },
-        wands: { loaded: 0, data: [] }
-    };
-
     function goToB1() {
         navigate('page-b1', 'bg-video-b');
-        if (!dictionaryInited) {
-            initDictionaryData();
-            dictionaryInited = true;
-        }
-    }
-
-    function initDictionaryData() {
-        pageStates.major.data = tarotDatabase.filter(c => getCardField(c, 'id') <= 24);
-        pageStates.cups.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id > 24 && id <= 38; });
-        pageStates.pentacles.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id > 38 && id <= 52; });
-        pageStates.swords.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id > 52 && id <= 66; });
-        pageStates.wands.data = tarotDatabase.filter(c => { const id = getCardField(c, 'id'); return id > 66 && id <= 80; });
-
-        // 渲染对应的滑动网格
-        renderGrid('major', 'grid-major');
-        renderGrid('cups', 'grid-cups');
-        renderGrid('pentacles', 'grid-pentacles');
-        renderGrid('swords', 'grid-swords');
-        renderGrid('wands', 'grid-wands');
-    }
-
-    function renderGrid(type, gridId) {
-        const grid = document.getElementById(gridId);
-        grid.innerHTML = "";
-        const data = pageStates[type].data;
-        data.forEach(card => {
-            const cardId = getCardField(card, 'id');
-            const name = getCardField(card, 'name');
-            const imgPath = card.img || `assets/img/cards/${cardId}.jpg`;
-            const itemHtml = `
-                <div class="grid-item" onclick="viewCardDetails(${cardId})">
-                    <div class="grid-img-wrap">
-                        <img src="${imgPath}" alt="${name}" loading="lazy">
-                    </div>
-                    <span>${name}</span>
-                </div>
-            `;
-            grid.insertAdjacentHTML('beforeend', itemHtml);
-        });
-    }
-
-    function viewCardDetails(cardId) {
-        const card = tarotDatabase.find(c => getCardField(c, 'id') == cardId);
-        if (!card) return;
-        
-        document.getElementById('b2-card-img').src = card.img || `assets/img/cards/${cardId}.jpg`;
-        document.getElementById('b2-card-title').innerText = `${getCardField(card, 'name')} (${getCardField(card, 'name_en')})`;
-        
-        const content = document.getElementById('b2-detail-content');
-        content.innerHTML = `
-            <div class="b2-section-title">占星对应</div>
-            <div>${getCardField(card, 'astrology') || '无'}</div>
-            <div class="b2-section-title">牌面解释</div>
-            <div>${getCardField(card, 'desc')}</div>
-            <div class="b2-section-title">正位牌义</div>
-            <div>${getCardField(card, 'upright')}</div>
-            <div class="b2-section-title">逆位牌义</div>
-            <div>${getCardField(card, 'reversed')}</div>
-        `;
-        
-        navigate('page-b2', 'bg-video-b');
-    }
-
-    function copySingleB2Meaning() {
-        const title = document.getElementById('b2-card-title').innerText;
-        const detail = document.getElementById('b2-detail-content').innerText;
-        const copyText = `🔮 咪的天「${title}」牌义解析 🔮\n\n${detail}`;
-        navigator.clipboard.writeText(copyText).then(() => {
-            showToast("牌义已复制到剪切板咪~");
-        }).catch(() => {
-            showToast("复制失败，请重试");
-        });
+        scrollToSlide(0);
     }
 
     function scrollToSlide(index) {
         const swiper = document.getElementById('b1-swiper');
-        const slideWidth = swiper.clientWidth;
-        swiper.scrollTo({
-            left: slideWidth * index,
-            behavior: 'smooth'
-        });
-        updateEmojiNav(index);
+        const slides = swiper.querySelectorAll('.b1-slide');
+        if (slides[index]) {
+            swiper.scrollTo({
+                left: slides[index].offsetLeft,
+                behavior: 'smooth'
+            });
+        }
+        updateEmojiActive(index);
     }
 
-    function updateEmojiNav(activeIndex) {
-        const items = document.querySelectorAll('.emoji-nav .emoji-item');
-        items.forEach((item, idx) => {
+    function updateEmojiActive(activeIndex) {
+        const emojis = document.querySelectorAll('.emoji-nav .emoji-item');
+        emojis.forEach((emoji, idx) => {
             if (idx === activeIndex) {
-                item.classList.add('active');
+                emoji.classList.add('active');
             } else {
-                item.classList.remove('active');
+                emoji.classList.remove('active');
             }
         });
     }
 
-    // 监听横向滑动事件同步 Emoji 激活
+    // 监听 Swiper 惯性横向滑动
     document.getElementById('b1-swiper').addEventListener('scroll', function() {
         const swiper = this;
+        const width = swiper.clientWidth;
+        if (width === 0) return;
         const scrollLeft = swiper.scrollLeft;
-        const slideWidth = swiper.clientWidth;
-        const index = Math.round(scrollLeft / slideWidth);
-        updateEmojiNav(index);
+        const activeIndex = Math.round(scrollLeft / width);
+        updateEmojiActive(activeIndex);
+    });
+
+    // 渲染 B1 页面的 80 张牌宫格数据
+    function initB1Page() {
+        const majorGrid = document.getElementById('grid-major');
+        const cupsGrid = document.getElementById('grid-cups');
+        const pentaclesGrid = document.getElementById('grid-pentacles');
+        const swordsGrid = document.getElementById('grid-swords');
+        const wandsGrid = document.getElementById('grid-wands');
+        
+        majorGrid.innerHTML = "";
+        cupsGrid.innerHTML = "";
+        pentaclesGrid.innerHTML = "";
+        swordsGrid.innerHTML = "";
+        wandsGrid.innerHTML = "";
+        
+        tarotDatabase.forEach(card => {
+            const id = getCardField(card, 'id');
+            const name = getCardField(card, 'name');
+            const imgPath = card.img || `assets/img/cards/${id}.jpg`;
+            
+            const itemHtml = `
+                <div class="grid-item" onclick="goToB2(${id})">
+                    <div class="grid-img-wrap">
+                        <img src="${imgPath}" alt="${name}">
+                    </div>
+                    <span>${name}</span>
+                </div>
+            `;
+            
+            if (id <= 24) {
+                majorGrid.insertAdjacentHTML('beforeend', itemHtml);
+            } else if (id <= 38) {
+                cupsGrid.insertAdjacentHTML('beforeend', itemHtml);
+            } else if (id <= 52) {
+                pentaclesGrid.insertAdjacentHTML('beforeend', itemHtml);
+            } else if (id <= 66) {
+                swordsGrid.insertAdjacentHTML('beforeend', itemHtml);
+            } else {
+                wandsGrid.insertAdjacentHTML('beforeend', itemHtml);
+            }
+        });
+    }
+
+    // 跳转 B2 大图卡面展示页
+    let currentB2Card = null;
+    function goToB2(cardId) {
+        const card = tarotDatabase.find(c => getCardField(c, 'id') == cardId);
+        if (!card) return;
+        currentB2Card = card;
+        
+        const name = getCardField(card, 'name');
+        const nameEn = getCardField(card, 'name_en');
+        const astrology = getCardField(card, 'astrology');
+        const desc = getCardField(card, 'desc');
+        const upright = getCardField(card, 'upright');
+        const reversed = getCardField(card, 'reversed');
+        const imgPath = card.img || `assets/img/cards/${cardId}.jpg`;
+        
+        document.getElementById('b2-card-img').src = imgPath;
+        document.getElementById('b2-card-title').innerText = `${name} (${nameEn})`;
+        
+        const detailContent = `
+            <div class="b2-section-title">占星对应</div>
+            <div>${astrology || '无'}</div>
+            <div class="b2-section-title">牌意解释</div>
+            <div>${desc}</div>
+            <div class="b2-section-title">正位</div>
+            <div>${upright}</div>
+            <div class="b2-section-title">逆位</div>
+            <div>${reversed}</div>
+        `;
+        document.getElementById('b2-detail-content').innerHTML = detailContent;
+        
+        navigate('page-b2', 'bg-video-b');
+    }
+
+    // B2 复制单张牌释义
+    function copySingleB2Meaning() {
+        if (!currentB2Card) return;
+        const name = getCardField(currentB2Card, 'name');
+        const nameEn = getCardField(currentB2Card, 'name_en');
+        const astrology = getCardField(currentB2Card, 'astrology');
+        const desc = getCardField(currentB2Card, 'desc');
+        const upright = getCardField(currentB2Card, 'upright');
+        const reversed = getCardField(currentB2Card, 'reversed');
+        
+        let text = `✨ 咪的天 - MeowTarot ✨\n\n`;
+        text += `卡牌：【${name}】 (${nameEn})\n`;
+        text += `占星：${astrology || '无'}\n\n`;
+        text += `【牌意解释】\n${desc}\n\n`;
+        text += `【正位】\n${upright}\n\n`;
+        text += `【逆位】\n${reversed}\n\n`;
+        text += `愿星辰指引你的道路。✨`;
+        
+        navigator.clipboard.writeText(text).then(() => {
+            showToast("该卡牌释义已成功复制！");
+        }).catch(() => {
+            showToast("复制失败，请手动选择复制");
+        });
+    }
+
+    /* ==========================================
+       5.9 资源预加载算法 (真实加载监听)
+       ========================================== */
+    function preloadAllAssets() {
+        // 创建核心预加载队列：卡背、卡牌叠层占位大图、以及1-80号所有塔罗牌
+        const imagesToPreload = [
+            'assets/img/card_back.jpg',
+            'assets/img/card_stack.webp'
+        ];
+        for (let i = 1; i <= 80; i++) {
+            imagesToPreload.push(`assets/img/cards/${i}.jpg`);
+        }
+
+        let loadedCount = 0;
+        const total = imagesToPreload.length;
+
+        imagesToPreload.forEach(src => {
+            const img = new Image();
+            img.onload = img.onerror = () => {
+                loadedCount++;
+                const percentage = Math.round((loadedCount / total) * 100);
+                updatePreloadProgress(percentage);
+            };
+            img.src = src;
+        });
+    }
+
+    function updatePreloadProgress(percent) {
+        const bar = document.getElementById('preload-bar');
+        const text = document.getElementById('preload-text');
+        const btnStart = document.getElementById('btn-start-divination');
+        const btnMeanings = document.getElementById('btn-view-meanings');
+
+        if (bar) bar.style.width = `${percent}%`;
+        
+        // 动态高保真等比计算 21.5M 对应的当前体积大小
+        const currentMB = ((percent * 21.5) / 100).toFixed(1);
+        if (text) {
+            if (percent < 100) {
+                text.innerText = `正在加载神秘塔罗力量... ${percent}% (${currentMB}MB / 21.5MB)`;
+            } else {
+                text.innerText = `加载完毕！魔法星之门已开启 100% (21.5MB / 21.5MB)`;
+            }
+        }
+
+        if (percent === 100) {
+            // 启用核心按钮
+            if (btnStart) btnStart.classList.remove('disabled');
+            if (btnMeanings) btnMeanings.classList.remove('disabled');
+            
+            // 延时让进度条丝滑淡出
+            setTimeout(() => {
+                const container = document.getElementById('preload-container');
+                if (container) {
+                    container.style.transition = 'opacity 0.5s ease, margin 0.5s ease';
+                    container.style.opacity = '0';
+                    container.style.marginBottom = '0px';
+                    setTimeout(() => {
+                        container.style.display = 'none';
+                    }, 500);
+                }
+            }, 1000);
+        }
+    }
+
+    /* ==========================================
+       6. 初始化系统入口
+       ========================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+        initB1Page();      // 初始化渲染B1牌仓
+        preloadAllAssets(); // 启动真实资源多线程并行预加载
     });
    </script>
 </body>
