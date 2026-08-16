@@ -841,7 +841,7 @@
 
     <div class="app-container">
         <!-- 背景视频层 -->
-        <video id="bg-video-home" class="video-bg active" loop muted playsinline poster="assets/img/first_frame/home_first.webp">
+        <video id="bg-video-home" class="video-bg active" autoplay loop muted playsinline poster="assets/img/first_frame/home_first.webp">
             <source src="assets/video/home_bg.mp4" type="video/mp4">
         </video>
         <video id="bg-video-a1-a2" class="video-bg" loop muted playsinline poster="assets/img/first_frame/a1_a2_first.webp">
@@ -2056,6 +2056,22 @@
     let drawnIndices = []; 
     let drawnResult = [];  
 
+    function playActiveBackgroundVideo() {
+        const activeVideo = document.querySelector('.video-bg.active');
+        if (!activeVideo) return;
+
+        // iOS/Android 只有静音且 playsinline 时才允许背景视频自动播放。
+        activeVideo.muted = true;
+        activeVideo.playsInline = true;
+        activeVideo.play().catch(() => {
+            // 省电模式等系统策略仍可能拦截自动播放；首次触摸时再次尝试。
+            const resumeOnTouch = () => {
+                activeVideo.play().catch(() => {});
+            };
+            document.addEventListener('touchstart', resumeOnTouch, { once: true, passive: true });
+        });
+    }
+
     // 视频复用导航函数
     function navigate(pageId, activeVideoId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -2065,6 +2081,8 @@
         document.querySelectorAll('.video-bg').forEach(v => {
             if (v.id === activeVideoId) {
                 v.classList.add('active');
+                v.muted = true;
+                v.playsInline = true;
                 v.play().catch(()=>{});
             } else {
                 v.classList.remove('active');
@@ -2577,6 +2595,7 @@ function copySingleB2Meaning() {
 
         if (percent === 100 && !assetsAreReady) {
             assetsAreReady = true;
+            playActiveBackgroundVideo();
             // 启用核心按钮
             if (btnStart) btnStart.classList.remove('disabled');
             if (btnMeanings) btnMeanings.classList.remove('disabled');
@@ -2710,6 +2729,12 @@ function copySingleB2Meaning() {
     window.addEventListener('DOMContentLoaded', () => {
         initB1Page();      // 初始化渲染B1牌仓
         prepareOfflineAssets(); // 首次完整保存，后续从浏览器本地快速读取
+        playActiveBackgroundVideo();
+    });
+
+    // 手机从后台切回网页时，系统可能暂停视频；回到前台后自动恢复当前背景。
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) playActiveBackgroundVideo();
     });
    </script>
 </body>
