@@ -2531,33 +2531,28 @@ function copySingleB2Meaning() {
     });
 }
     /* ==========================================
-       5.9 资源预加载算法 (真实加载监听)
+       5.9 持久资源缓存（关闭浏览器后仍然保留）
        ========================================== */
-    function preloadAllAssets() {
-        // 创建核心预加载队列：卡背、卡牌叠层占位大图、以及1-80号所有塔罗牌
-        const imagesToPreload = [
-            'assets/img/card_back.jpg',
-            'assets/img/card_stack.webp'
-        ];
-        for (let i = 1; i <= 80; i++) {
-            imagesToPreload.push(`assets/img/cards/${i}.jpg`);
-        }
+    const TOTAL_ASSET_MB = 21.5;
+    let assetsAreReady = false;
+    let fallbackPreloadStarted = false;
 
-        let loadedCount = 0;
-        const total = imagesToPreload.length;
+    const OFFLINE_ASSETS = [
+        'assets/fonts/SourceHanSerif.otf',
+        'assets/img/card_back.jpg',
+        'assets/img/card_stack.webp',
+        'assets/img/first_frame/home_first.webp',
+        'assets/img/first_frame/a1_a2_first.webp',
+        'assets/img/first_frame/a3_a4_first.webp',
+        'assets/img/first_frame/b_first.webp',
+        'assets/video/home_bg.mp4',
+        'assets/video/a1_a2_bg.mp4',
+        'assets/video/a3_a4_bg.mp4',
+        'assets/video/b_bg.mp4',
+        ...Array.from({ length: 80 }, (_, index) => `assets/img/cards/${index + 1}.jpg`)
+    ];
 
-        imagesToPreload.forEach(src => {
-            const img = new Image();
-            img.onload = img.onerror = () => {
-                loadedCount++;
-                const percentage = Math.round((loadedCount / total) * 100);
-                updatePreloadProgress(percentage);
-            };
-            img.src = src;
-        });
-    }
-
-    function updatePreloadProgress(percent) {
+    function updatePreloadProgress(percent, status = 'loading') {
         const bar = document.getElementById('preload-bar');
         const text = document.getElementById('preload-text');
         const btnStart = document.getElementById('btn-start-divination');
@@ -2565,17 +2560,23 @@ function copySingleB2Meaning() {
 
         if (bar) bar.style.width = `${percent}%`;
         
-        // 动态高保真等比计算 21.5M 对应的当前体积大小
-        const currentMB = ((percent * 21.5) / 100).toFixed(1);
+        const currentMB = ((percent * TOTAL_ASSET_MB) / 100).toFixed(1);
         if (text) {
-            if (percent < 100) {
-                text.innerText = `正在加载神秘塔罗力量... ${percent}% (${currentMB}MB / 21.5MB)`;
+            if (status === 'fallback' && percent < 100) {
+                text.innerText = `正在使用兼容模式加载... ${percent}% (${currentMB}MB / ${TOTAL_ASSET_MB}MB)`;
+                text.style.color = '#ffd6ff';
+            } else if (status === 'fallback') {
+                text.innerText = '资源加载完成，可以开始使用';
+                text.style.color = '#ff9dff';
+            } else if (percent < 100) {
+                text.innerText = `首次保存塔罗资源... ${percent}% (${currentMB}MB / ${TOTAL_ASSET_MB}MB)`;
             } else {
-                text.innerText = `加载完毕！魔法星之门已开启 100% (21.5MB / 21.5MB)`;
+                text.innerText = `资源已保存在本机！下次可快速进入 100% (${TOTAL_ASSET_MB}MB / ${TOTAL_ASSET_MB}MB)`;
             }
         }
 
-        if (percent === 100) {
+        if (percent === 100 && !assetsAreReady) {
+            assetsAreReady = true;
             // 启用核心按钮
             if (btnStart) btnStart.classList.remove('disabled');
             if (btnMeanings) btnMeanings.classList.remove('disabled');
@@ -2595,12 +2596,120 @@ function copySingleB2Meaning() {
         }
     }
 
+    function handleCacheMessage(message) {
+        if (!message) return;
+
+        if (message.type === 'CACHE_ERROR') {
+            console.error('离线资源缓存失败：', message.message);
+            preloadWithBrowserCache(message.message);
+            return;
+        }
+
+        if (message.type === 'CACHE_PROGRESS' || message.type === 'CACHE_READY') {
+            const percent = message.total > 0
+                ? Math.round((message.completed / message.total) * 100)
+                : 0;
+            updatePreloadProgress(percent);
+        }
+    }
+
+    async function fetchCompleteAsset(src) {
+        const response = await fetch(src, { cache: 'force-cache' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${src}`);
+        // 读取完整响应体，保证进度不是只计算到了响应头。
+        await response.blob();
+    }
+
+    async function preloadWithBrowserCache(reason) {
+        if (fallbackPreloadStarted || assetsAreReady) return;
+        fallbackPreloadStarted = true;
+        console.warn('已切换到浏览器兼容预加载：', reason);
+
+        let nextIndex = 0;
+        let completed = 0;
+        let failed = 0;
+
+        async function worker() {
+            while (nextIndex < OFFLINE_ASSETS.length) {
+                const src = OFFLINE_ASSETS[nextIndex++];
+                try {
+                    await fetchCompleteAsset(src);
+                } catch (error) {
+                    failed += 1;
+                    console.error('普通预加载失败：', error);
+                } finally {
+                    completed += 1;
+                    const percent = Math.round((completed / OFFLINE_ASSETS.length) * 100);
+                    updatePreloadProgress(percent, 'fallback');
+                }
+            }
+        }
+
+        await Promise.all(Array.from({ length: 4 }, () => worker()));
+
+        // 即使某个非核心资源暂时失败，也不再让整个网页永久锁死。
+        if (failed > 0) {
+            console.warn(`有 ${failed} 个资源未能预加载，使用时浏览器会再次尝试。`);
+        }
+        updatePreloadProgress(100, 'fallback');
+    }
+
+    function requestCacheStatus(worker) {
+        if (!worker) return;
+        const channel = new MessageChannel();
+        channel.port1.onmessage = event => handleCacheMessage(event.data);
+        worker.postMessage({ type: 'GET_CACHE_STATUS' }, [channel.port2]);
+    }
+
+    async function prepareOfflineAssets() {
+        if (!('serviceWorker' in navigator) || !window.isSecureContext) {
+            console.warn('当前环境不支持持久离线缓存；请通过 HTTPS 或 localhost 打开页面。');
+            preloadWithBrowserCache('当前环境不支持 Service Worker');
+            return;
+        }
+
+        navigator.serviceWorker.addEventListener('message', event => {
+            handleCacheMessage(event.data);
+        });
+
+        try {
+            const registration = await navigator.serviceWorker.register('./sw.js', {
+                scope: './',
+                updateViaCache: 'none'
+            });
+
+            // 已装好时立即核对缓存；首次安装时进度由 sw.js 实时推送。
+            requestCacheStatus(
+                registration.installing || registration.waiting || registration.active
+            );
+
+            registration.addEventListener('updatefound', () => {
+                const worker = registration.installing;
+                if (!worker) return;
+                worker.addEventListener('statechange', () => {
+                    if (worker.state === 'activated') requestCacheStatus(worker);
+                });
+            });
+
+            const readyRegistration = await navigator.serviceWorker.ready;
+            requestCacheStatus(readyRegistration.active);
+
+            // 尽量降低浏览器自动清理这份缓存的概率；不支持时不影响正常使用。
+            if (navigator.storage?.persist) {
+                navigator.storage.persist().catch(() => {});
+            }
+        } catch (error) {
+            console.error('注册离线缓存失败：', error);
+            preloadWithBrowserCache(error instanceof Error ? error.message : String(error));
+        }
+    }
+
     /* ==========================================
        6. 初始化系统入口
        ========================================== */
     window.addEventListener('DOMContentLoaded', () => {
         initB1Page();      // 初始化渲染B1牌仓
-        preloadAllAssets(); // 启动真实资源多线程并行预加载
+        prepareOfflineAssets(); // 首次完整保存，后续从浏览器本地快速读取
     });
    </script>
 </body>
